@@ -16,6 +16,7 @@ orjson = "^3.8.1"
 websockets = "^10.4"
 coloredlogs = "^15.0.1"
 motor = "3.0.0"
+pendulum = "^2.1.2"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^5.0.4"
