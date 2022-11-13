@@ -1,0 +1,22 @@
+{
+  "name": "kidofood",
+  "version": "0.1.0",
+  "description": "A full-stack food deliver web application",
+  "main": "index.js",
+  "scripts": {
+    "start": "pnpm --stream -r start",
+    "start:win": "pnpm --stream -r start:win",
+    "dev": "pnpm --stream -r dev",
+    "dev:win": "pnpm --stream -r dev:win"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noaione/kidofood.git"
+  },
+  "author": "noaione <noaione@n4o.xyz>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/noaione/kidofood/issues"
+  },
+  "homepage": "https://github.com/noaione/kidofood#readme"
+}
