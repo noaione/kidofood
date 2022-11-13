@@ -26,17 +26,24 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
-from uuid import uuid4
 
 from bson import ObjectId
 from odmantic import Field, Model, Reference, query
 
+from ..utils import make_uuid
+
 if TYPE_CHECKING:
     from odmantic import AIOEngine
 
-
-def make_uuid():
-    return str(uuid4())
+__all__ = (
+    "ItemType",
+    "OrderStatus",
+    "UserType",
+    "Merchant",
+    "FoodItem",
+    "User",
+    "FoodOrder",
+)
 
 
 class ItemType(str, Enum):
@@ -78,7 +85,7 @@ class OrderStatus(int, Enum):
 
 
 class Merchant(Model):
-    merchant_id: str = Field(default_factory=make_uuid)
+    merchant_id: str = Field(default_factory=make_uuid, unique=True)
     name: str
     description: str
     # S3 key
@@ -93,7 +100,7 @@ class Merchant(Model):
 
 
 class FoodItem(Model):
-    item_id: str = Field(default_factory=make_uuid)
+    item_id: str = Field(default_factory=make_uuid, unique=True)
     name: str = Field(index=True)
     stock: int
     price: float
@@ -106,7 +113,7 @@ class FoodItem(Model):
 
 
 class User(Model):
-    user_id: str = Field(default_factory=make_uuid)
+    user_id: str = Field(default_factory=make_uuid, unique=True)
     name: str
     email: str = Field(index=True, unique=True)
     # Hashed password (scrypt)
@@ -122,7 +129,7 @@ class User(Model):
 
 
 class FoodOrder(Model):
-    order_id: str = Field(default_factory=make_uuid)
+    order_id: str = Field(default_factory=make_uuid, unique=True)
     items: list[ObjectId]
     total: float
     user: User = Reference()
