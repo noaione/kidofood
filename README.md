@@ -10,7 +10,7 @@ A (almost) full-featured food delivery app written in TypeScript and Python!
 - Next.js (Framework)
 
 ### Backend
-- Python 3.8+
+- Python 3.9+
 - FastAPI (Framework)
 - MongoDB (Database)
 - ODMantic (ODM)
