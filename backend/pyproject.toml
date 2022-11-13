@@ -6,7 +6,7 @@ authors = ["noaione <noaione0809@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 fastapi = "^0.86.0"
 odmantic = "^0.9.0"
 fastapi-sessions = "^0.3.2"
@@ -39,8 +39,8 @@ exclude = '''
   | \.mypy_cache
   | \.tox
   | \.venv
-  | \venv
-  | \env
+  | venv
+  | env
   | _build
   | build
   | dist
