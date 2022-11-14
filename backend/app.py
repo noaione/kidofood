@@ -68,12 +68,8 @@ async def on_app_startup():
     logger.info("Session created!")
 
 
-router.include_router(
-    user.router,
-)
-app.include_router(
-    router,
-)
+router.include_router(user.router)
+app.include_router(router)
 
 
 @app.get("/", include_in_schema=False)
