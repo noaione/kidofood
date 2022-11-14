@@ -4,19 +4,20 @@
     "description": "Backend code for kidofood food deliver web application",
     "main": "index.js",
     "scripts": {
-        "dev": "./.venv/bin/python3 -m uvicorn app:app --reload --port 5450 --host 127.0.0.1 --log-level debug",
-        "dev:win": "./.venv/Scripts/python3 -m uvicorn app:app --reload --port 5450 --host 127.0.0.1 --log-level debug",
-        "start": "./.venv/bin/python3 -m uvicorn app:app --port 5450 --host 127.0.0.1",
-        "start:win": "./.venv/Scripts/python3 -m uvicorn app:app --port 5450 --host 127.0.0.1"
+        "dev": "node pyenv -m uvicorn app:app --reload --port 5450 --host 127.0.0.1 --log-level debug",
+        "start": "node pyenv -m uvicorn app:app --port 5450 --host 127.0.0.1"
     },
     "repository": {
-      "type": "git",
-      "url": "git+https://github.com/noaione/kidofood.git"
+        "type": "git",
+        "url": "git+https://github.com/noaione/kidofood.git"
     },
     "author": "noaione <noaione@n4o.xyz>",
     "license": "MIT",
     "bugs": {
-      "url": "https://github.com/noaione/kidofood/issues"
+        "url": "https://github.com/noaione/kidofood/issues"
     },
-    "homepage": "https://github.com/noaione/kidofood/tree/master/backend#readme"
+    "homepage": "https://github.com/noaione/kidofood/tree/master/backend#readme",
+    "dependencies": {
+        "cross-spawn": "^7.0.3"
+    }
 }
