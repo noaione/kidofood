@@ -22,10 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Any
-from uuid import uuid4
 from pathlib import Path
 from textwrap import dedent
+from typing import Any, Union, overload
+from uuid import UUID, uuid4
 
 __all__ = (
     "make_uuid",
@@ -38,8 +38,19 @@ __all__ = (
 ROOT_PATH = Path(__file__).absolute().parent.parent
 
 
-def make_uuid():
-    return str(uuid4())
+@overload
+def make_uuid(stringify: bool = False) -> UUID:
+    ...
+
+
+@overload
+def make_uuid(stringify: bool = True) -> str:
+    ...
+
+
+def make_uuid(stringify: bool = True) -> Union[str, UUID]:
+    m = uuid4()
+    return str(m) if stringify else m
 
 
 def to_boolean(value: Any) -> bool:
