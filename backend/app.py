@@ -1,10 +1,12 @@
 from pathlib import Path
 
-from fastapi import FastAPI, APIRouter
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, FastAPI
+from fastapi.datastructures import Default
+from fastapi.responses import ORJSONResponse, RedirectResponse
 
 from internals.db import KFDatabase
-from internals.session import create_session
+from internals.session import create_session, get_session_backend
+from internals.storage import S3BucketServer, create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean
 from routes import user
@@ -56,6 +58,22 @@ async def on_app_startup():
     await kfdb.connect()
     logger.info("Connected to database!")
 
+    S3_HOSTNAME = env_config.get("S3_HOSTNAME")
+    S3_ACCESS_KEY = env_config.get("S3_ACCESS_KEY")
+    S3_SECRET_KEY = env_config.get("S3_SECRET_KEY")
+    S3_BUCKET = env_config.get("S3_BUCKET")
+
+    # S3 all available?
+    if (
+        S3_HOSTNAME is not None
+        and S3_ACCESS_KEY is not None
+        and S3_SECRET_KEY is not None
+        and S3_BUCKET is not None
+    ):
+        logger.info("S3 storage available, connecting...")
+        await create_s3_server(S3_HOSTNAME, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
+        logger.info("Connected to S3 storage!")
+
     logger.info("Creating session...")
     SECRET_KEY = env_config.get("SECRET_KEY") or "KIDOFOOD_SECRET_KEY"
     REDIS_HOST = env_config.get("REDIS_HOST")
@@ -68,7 +86,26 @@ async def on_app_startup():
     logger.info("Session created!")
 
 
-router.include_router(user.router)
+@app.on_event("shutdown")
+async def on_app_shutdown():
+    logger.info("Shutting down KidoFood backend...")
+    s3_local = get_s3_or_local()
+    if isinstance(s3_local, S3BucketServer):
+        logger.info("Closing S3 storage connection...")
+        s3_local.close()
+        logger.info("Closed S3 storage!")
+
+    try:
+        logger.info("Closing redis session backend...")
+        db_backend = get_session_backend()
+        await db_backend.shutdown()
+        logger.info("Closed redis session backend!")
+    except Exception:
+        pass
+
+
+ORJSONDefault = Default(ORJSONResponse)
+router.include_router(user.router, default_response_class=ORJSONDefault)
 app.include_router(router)
 
 
