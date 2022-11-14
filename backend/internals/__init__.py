@@ -11,5 +11,6 @@ from . import db, models
 from .redbridge import *
 from .responses import *
 from .session import *
+from .storage import *
 from .tooling import *
 from .utils import *
