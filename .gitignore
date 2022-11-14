@@ -343,3 +343,6 @@ pip-selfcheck.json
 
 # Test stuff
 _testing/
+
+# Local/assets stuff
+storages/
