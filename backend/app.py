@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.responses import RedirectResponse
 
 from internals.db import KFDatabase
@@ -17,13 +17,13 @@ if app_ver is None:
     logger.error("Failed to get version from pyproject.toml")
     exit(1)
 app = FastAPI(
-    root_path="/api",
     title="KidoFood",
     description=get_description(),
     version=app_ver,
     license_info={"name": "MIT License", "url": "https://github.com/noaione/kidofood/blob/master/LICENSE"},
     contact={"url": "https://github.com/noaione/kidofood"},
 )
+router = APIRouter(prefix="/api")
 
 
 @app.on_event("startup")
@@ -68,12 +68,15 @@ async def on_app_startup():
     logger.info("Session created!")
 
 
-app.include_router(
+router.include_router(
     user.router,
+)
+app.include_router(
+    router,
 )
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root_api():
     # Redirect to docs
     return RedirectResponse("/docs")
