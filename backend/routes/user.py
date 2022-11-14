@@ -29,8 +29,6 @@ from uuid import UUID
 
 from beanie.operators import Eq
 from fastapi import APIRouter, Depends
-from fastapi.datastructures import Default
-from fastapi.responses import ORJSONResponse, Response
 
 from internals.db import User
 from internals.models import PartialLogin, PartialRegister
@@ -47,11 +45,7 @@ from internals.session import (
 )
 
 __all__ = ("router",)
-router = APIRouter(
-    prefix="/user",
-    tags=["User"],
-    default_response_class=Default(ORJSONResponse),
-)
+router = APIRouter(prefix="/user", tags=["User"])
 logger = logging.getLogger("Routes.User")
 
 
@@ -104,7 +98,7 @@ async def auth_enter(user: PartialLogin):
 
 
 @router.post("/leave", summary="Logout from KidoFood", response_model=ResponseType)
-async def auth_leave(response: Response, session_id: UUID = Depends(check_session_cookie)):
+async def auth_leave(session_id: UUID = Depends(check_session_cookie)):
     """
     This route will remove your current session.
     """
@@ -122,7 +116,7 @@ async def auth_leave(response: Response, session_id: UUID = Depends(check_sessio
     summary="Register to KidoFood",
     response_model=ResponseType[PartialUserSession],
 )
-async def auth_register(user: PartialRegister, response: Response):
+async def auth_register(user: PartialRegister):
     """
     This route will try to register the user with the given information.
     """
