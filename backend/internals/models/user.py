@@ -14,7 +14,7 @@ class PartialLogin:
 
     email: str
     password: str
-    remember: bool
+    remember: bool = False
 
 
 @dataclass
