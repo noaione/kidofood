@@ -30,10 +30,10 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 import pendulum
-from beanie import Link
+from beanie import Document, Link
 from pydantic import Field
 
-from ._doc import DocumentX
+from ._doc import _coerce_to_pendulum
 
 __all__ = (
     "ItemType",
@@ -85,7 +85,7 @@ class OrderStatus(int, Enum):
     DONE = 200
 
 
-class Merchant(DocumentX):
+class Merchant(Document):
     merchant_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
     description: str
@@ -105,8 +105,12 @@ class Merchant(DocumentX):
         name = "FoodMerchants"
         use_state_management = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _coerce_to_pendulum(self)
 
-class FoodItem(DocumentX):
+
+class FoodItem(Document):
     item_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
     stock: int
@@ -124,8 +128,12 @@ class FoodItem(DocumentX):
         name = "FoodItems"
         use_state_management = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _coerce_to_pendulum(self)
 
-class User(DocumentX):
+
+class User(Document):
     user_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
     email: str = Field(unique=True)
@@ -135,10 +143,10 @@ class User(DocumentX):
     # Multiple addresses
     address: list[str] = Field(default_factory=list)
     # S3 key
-    avatar: str
+    avatar: str = Field(default="")
 
     # merchant association if type is merchant
-    merchant: Optional[Link[Merchant]]
+    merchant: Optional[Link[Merchant]] = Field(default=None)
 
     created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
     updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
@@ -147,8 +155,12 @@ class User(DocumentX):
         name = "Users"
         use_state_management = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _coerce_to_pendulum(self)
 
-class FoodOrder(DocumentX):
+
+class FoodOrder(Document):
     order_id: UUID = Field(default_factory=uuid4, unique=True)
     items: list[Link[FoodItem]]
     total: float
@@ -162,3 +174,7 @@ class FoodOrder(DocumentX):
     class Config:
         collection = "FoodOrders"
         use_state_management = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _coerce_to_pendulum(self)

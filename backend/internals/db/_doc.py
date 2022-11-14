@@ -29,48 +29,55 @@ A custom Document class for Beanie, with support of coercing Pendulum DateTime o
 from __future__ import annotations
 
 from datetime import datetime
-from typing import get_args
+from typing import ForwardRef, get_args
 
 import pendulum
 from beanie import Document
 from pydantic.typing import resolve_annotations
 
-__all__ = ("DocumentX",)
+__all__ = ("_coerce_to_pendulum",)
 
 
-class DocumentX(Document):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+def _unpack_forwardref(annotation):
+    if isinstance(annotation, ForwardRef):
+        return annotation.__forward_arg__
+    return annotation
 
-        # Check if the date is a pendulum instance or not
-        self._coerce_to_pendulum()
 
-    def _coerce_to_pendulum(self):
-        # Get annotation list, and check if it's DateTime instance
-        # If it is, then check if it's a pendulum instance or not
+def _coerce_to_pendulum(clss: Document):
+    # Get annotation list, and check if it's DateTime instance
+    # If it is, then check if it's a pendulum instance or not
 
-        annotations = self.__annotations__
-        annotate = resolve_annotations(annotations, None)
+    annotations = clss.__annotations__
+    annotate = resolve_annotations(annotations, None)
 
-        for key, type_t in annotate.items():
-            act_type = type_t
-            type_arg = get_args(type_t)
-            if len(type_arg) > 0:
-                act_type = type_arg[0]
+    for key, type_t in annotate.items():
+        act_type = type_t
+        type_arg = get_args(type_t)
+        if len(type_arg) > 0:
+            act_type = type_arg[0]
+        fwd_unpack = _unpack_forwardref(act_type)
 
-            # check if it's pendulum class type
-            if issubclass(act_type, pendulum.DateTime):
-                # Coerce to pendulum instance
-                current = object.__getattribute__(self, key)
-                if current is None:
-                    continue
-                if isinstance(current, pendulum.DateTime):
-                    continue
-                if isinstance(current, str):
-                    # Assume ISO8601 format
-                    object.__setattr__(self, key, pendulum.parse(current))
-                elif isinstance(current, (int, float)):
-                    # Unix timestamp
-                    object.__setattr__(self, key, pendulum.from_timestamp(current))
-                elif isinstance(current, datetime):
-                    object.__setattr__(self, key, pendulum.instance(current))
+        try:
+            is_pdt_type = issubclass(act_type, pendulum.DateTime) or "pendulum.DateTime" in str(fwd_unpack)
+        except Exception:
+            is_pdt_type = "pendulum.DateTime" in str(fwd_unpack)
+            if not is_pdt_type:
+                continue
+
+        # check if it's pendulum class type
+        if is_pdt_type:
+            # Coerce to pendulum instance
+            current = object.__getattribute__(clss, key)
+            if current is None:
+                continue
+            if isinstance(current, pendulum.DateTime):
+                continue
+            if isinstance(current, str):
+                # Assume ISO8601 format
+                object.__setattr__(clss, key, pendulum.parse(current))
+            elif isinstance(current, (int, float)):
+                # Unix timestamp
+                object.__setattr__(clss, key, pendulum.from_timestamp(current))
+            elif isinstance(current, datetime):
+                object.__setattr__(clss, key, pendulum.instance(current))
