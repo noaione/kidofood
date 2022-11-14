@@ -5,9 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "pnpm --stream -r start",
-    "start:win": "pnpm --stream -r start:win",
-    "dev": "pnpm --stream -r dev",
-    "dev:win": "pnpm --stream -r dev:win"
+    "dev": "pnpm --stream -r dev"
   },
   "repository": {
     "type": "git",

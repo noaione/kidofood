@@ -5,9 +5,7 @@
     "main": "index.js",
     "scripts": {
         "dev": "next dev --port 5451",
-        "dev:win": "pnpm dev",
-        "start": "next start --port 5451",
-        "start:win": "pnpm start"
+        "start": "next start --port 5451"
     },
     "repository": {
       "type": "git",
