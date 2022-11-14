@@ -7,4 +7,4 @@ The routes module contains all the routes for the backend.
 :license: MIT, see LICENSE for more details.
 """
 
-from .auth import *
+from .user import *

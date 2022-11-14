@@ -33,8 +33,8 @@ from internals.responses import ResponseType
 
 __all__ = ("router",)
 router = APIRouter(
-    prefix="/auth",
-    tags=["auth"],
+    prefix="/user",
+    tags=["User"],
     dependencies=[Depends(get_session_cookie)],
     default_response_class=Default(ORJSONResponse),
 )

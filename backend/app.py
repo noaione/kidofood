@@ -6,8 +6,8 @@ from fastapi.responses import RedirectResponse
 from internals.db import KFDatabase
 from internals.session import create_session
 from internals.tooling import get_env_config, setup_logger
-from internals.utils import get_version, get_description, to_boolean
-from routes import auth
+from internals.utils import get_description, get_version, to_boolean
+from routes import user
 
 ROOT_DIR = Path(__file__).absolute().parent
 env_config = get_env_config()
@@ -69,7 +69,7 @@ async def on_app_startup():
 
 
 app.include_router(
-    auth.router,
+    user.router,
 )
 
 
