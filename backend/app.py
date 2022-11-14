@@ -40,7 +40,7 @@ async def on_app_startup():
     DB_AUTH_TLS = to_boolean(env_config.get("MONGODB_TLS"))
 
     if DB_URL is not None:
-        kfdb = KFDatabase(DB_URL)
+        kfdb = KFDatabase(DB_URL, dbname=DB_NAME or "kidofood")
     elif DB_HOST is not None:
         kfdb = KFDatabase(
             DB_HOST,
