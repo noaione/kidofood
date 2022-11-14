@@ -17,6 +17,7 @@ coloredlogs = "^15.0.1"
 motor = "3.0.0"
 pendulum = "^2.1.2"
 beanie = "^1.15.3"
+argon2-cffi = "^21.3.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^5.0.4"
@@ -49,7 +50,6 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
-multi_line_output = 3
 extend_skip = ["_dataset/**", "env/**", "venv/**", "./venv/**", ".pytest_cache/**", ".nox/**"]
 line_length = 110
 skip_gitignore = true
