@@ -24,20 +24,35 @@ SOFTWARE.
 
 from __future__ import annotations
 
+import logging
+from uuid import UUID
+
+from beanie.operators import Eq
 from fastapi import APIRouter, Depends
 from fastapi.datastructures import Default
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, Response
 
-from internals.session import UserSession, PartialUserSession, get_session_cookie, get_session_verifier
+from internals.db import User
+from internals.models import PartialLogin
 from internals.responses import ResponseType
+from internals.session import (
+    PartialUserSession,
+    UserSession,
+    check_session_cookie,
+    get_session_backend,
+    get_session_cookie,
+    get_session_verifier,
+    verify_password,
+)
 
 __all__ = ("router",)
 router = APIRouter(
     prefix="/user",
     tags=["User"],
-    dependencies=[Depends(get_session_cookie)],
+    dependencies=[Depends(check_session_cookie)],
     default_response_class=Default(ORJSONResponse),
 )
+logger = logging.getLogger("Routes.User")
 
 
 @router.get("/me")
@@ -47,3 +62,48 @@ async def auth_me(session: UserSession = Depends(get_session_verifier)):
     """
 
     return ResponseType[PartialUserSession](data=session.to_partial()).to_orjson()
+
+
+@router.post("/enter")
+async def auth_enter(user: PartialLogin, response: Response):
+    """
+    Login and set session
+    """
+
+    logger.info(f"Trying to authenticate {user.email} with {user.password}")
+    get_user = await User.find(Eq(User.email, user.email)).first_or_none()
+    if get_user is None:
+        logger.error(f"User {user.email} not found")
+        return ResponseType(error="User not found", code=401).to_orjson(401)
+
+    logger.info(f"User {user.email} found, verifying password")
+    is_verify, new_password = await verify_password(user.password, get_user.password)
+    if not is_verify:
+        logger.error(f"User {user.email} password not match")
+        return ResponseType(error="Password is incorrect", code=401).to_orjson(401)
+
+    if new_password is not None:
+        logger.warning(f"User {user.email} password hash is outdated, updating...")
+        get_user.password = new_password
+        await get_user.save_changes()
+
+    logger.info(f"User {user.email} authenticated, setting session")
+    session = UserSession.from_db(get_user, user.remember)
+    backend = get_session_backend()
+    await backend.create(session.session_id, session)
+    get_session_cookie().attach_to_response(response, session.session_id)
+
+    return ResponseType[PartialUserSession](data=session.to_partial()).to_orjson()
+
+
+@router.post("/leave")
+async def auth_leave(response: Response, session_id: UUID = Depends(check_session_cookie)):
+    """
+    Logout and remove session
+    """
+
+    backend = get_session_backend()
+    await backend.delete(session_id=session_id)
+    get_session_cookie().delete_from_response(response)
+
+    return ResponseType().to_orjson()
