@@ -2,26 +2,22 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import TYPE_CHECKING, Generic, Optional
+from typing import Generic, Optional
 
 import orjson
 from fastapi import HTTPException
-from fastapi_sessions.backends.session_backend import (BackendError,
-                                                       SessionBackend,
-                                                       SessionModel)
-from fastapi_sessions.frontends.implementations import (CookieParameters,
-                                                        SessionCookie)
+from fastapi_sessions.backends.session_backend import BackendError, SessionBackend, SessionModel
+from fastapi_sessions.frontends.implementations import CookieParameters, SessionCookie
 from fastapi_sessions.frontends.session_frontend import ID
 from fastapi_sessions.session_verifier import SessionVerifier
 from pydantic import BaseModel
+from starlette.requests import Request
 
 from .db import UserType
 from .redbridge import RedisBridge
 
-if TYPE_CHECKING:
-    from starlette.requests import Request
-
 __all__ = (
+    "PartialUserSession",
     "UserSession",
     "RedisBackend",
     "SharedSessionHandler",
@@ -31,17 +27,27 @@ __all__ = (
 )
 
 
-class UserSession(BaseModel):
+class PartialUserSession(BaseModel):
     # UUID string
     user_id: str
     email: str
     name: str
     type: UserType
 
+
+class UserSession(PartialUserSession):
     # RememberMe
     remember_me: bool
     remember_latch: bool
     session_id: str
+
+    def to_partial(self) -> PartialUserSession:
+        return PartialUserSession(
+            user_id=self.user_id,
+            email=self.email,
+            name=self.name,
+            type=self.type,
+        )
 
 
 class RedisBackend(Generic[ID, SessionModel], SessionBackend[ID, SessionModel]):
