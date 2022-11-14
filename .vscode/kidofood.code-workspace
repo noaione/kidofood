@@ -1,23 +1,25 @@
 {
-    "folders": [
-      {
-        "name": "ROOT",
-        "path": "../"
-      },
-      {
-        "name": "Frontend",
-        "path": "../frontend"
-      },
-      {
-        "name": "Backend",
-        "path": "../backend"
-      },
-    ],
-    "settings": {
-      "files.exclude": {
-        "node_modules/": true,
-        "backend/": true,
-        "frontend/": true
-      },
-    }
+  "folders": [
+    {
+      "name": "ROOT",
+      "path": "../"
+    },
+    {
+      "name": "Frontend",
+      "path": "../frontend"
+    },
+    {
+      "name": "Backend",
+      "path": "../backend"
+    },
+  ],
+  "settings": {
+    "files.exclude": {
+      "node_modules/": true,
+      "backend/": true,
+      "frontend/": true
+    },
+    "isort.check": true,
+    "isort.importStrategy": "fromEnvironment",
   }
+}
