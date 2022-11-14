@@ -7,7 +7,7 @@ A ton of internal modules for KidoFood backend.
 :license: MIT, see LICENSE for more details.
 """
 
-from . import db
+from . import db, models
 from .redbridge import *
 from .responses import *
 from .session import *
