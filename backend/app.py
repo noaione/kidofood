@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse, RedirectResponse
 
 from internals.db import KFDatabase
 from internals.session import create_session, get_session_backend
-from internals.storage import S3BucketServer, create_s3_server, get_s3_or_local
+from internals.storage import create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean
 from routes import user
@@ -73,6 +73,8 @@ async def on_app_startup():
         logger.info("S3 storage available, connecting...")
         await create_s3_server(S3_HOSTNAME, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
         logger.info("Connected to S3 storage!")
+    else:
+        logger.info("S3 storage not available, using local storage instead.")
 
     logger.info("Creating session...")
     SECRET_KEY = env_config.get("SECRET_KEY") or "KIDOFOOD_SECRET_KEY"
@@ -90,10 +92,9 @@ async def on_app_startup():
 async def on_app_shutdown():
     logger.info("Shutting down KidoFood backend...")
     s3_local = get_s3_or_local()
-    if isinstance(s3_local, S3BucketServer):
-        logger.info("Closing S3 storage connection...")
-        s3_local.close()
-        logger.info("Closed S3 storage!")
+    logger.info("Closing storage connection...")
+    s3_local.close()
+    logger.info("Closed storage connection!")
 
     try:
         logger.info("Closing redis session backend...")

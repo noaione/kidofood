@@ -19,6 +19,7 @@ pendulum = "^2.1.2"
 beanie = "^1.15.3"
 argon2-cffi = "^21.3.0"
 minio = "^7.1.12"
+aiopath = "0.5.12"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^5.0.4"
