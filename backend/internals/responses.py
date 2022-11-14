@@ -46,3 +46,12 @@ class ResponseType(GenericModel, Generic[DataType]):
     def to_string(self):
         data = self.dict()
         return orjson.dumps(data, option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_UUID).decode("utf-8")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "data": None,
+                "error": "Success",
+                "code": 200,
+            }
+        }

@@ -55,19 +55,20 @@ router = APIRouter(
 logger = logging.getLogger("Routes.User")
 
 
-@router.get("/me")
+@router.get("/me", summary="Get current user", response_model=ResponseType[PartialUserSession])
 async def auth_me(session: UserSession = Depends(get_session_verifier)):
     """
-    Get current user's info
+    This route will return the current user information from the cookie
+    information.
     """
 
     return ResponseType[PartialUserSession](data=session.to_partial()).to_orjson()
 
 
-@router.post("/enter")
+@router.post("/enter", summary="Login to KidoFood", response_model=ResponseType[PartialUserSession])
 async def auth_enter(user: PartialLogin, response: Response):
     """
-    Login and set session
+    This route will try to login the user with the given information.
     """
 
     logger.info(f"Trying to authenticate {user.email} with {user.password}")
@@ -96,10 +97,10 @@ async def auth_enter(user: PartialLogin, response: Response):
     return ResponseType[PartialUserSession](data=session.to_partial()).to_orjson()
 
 
-@router.post("/leave")
+@router.post("/leave", summary="Logout from KidoFood", response_model=ResponseType[None])
 async def auth_leave(response: Response, session_id: UUID = Depends(check_session_cookie)):
     """
-    Logout and remove session
+    This route will remove your current session.
     """
 
     backend = get_session_backend()
