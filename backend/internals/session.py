@@ -95,6 +95,10 @@ class RedisBackend(Generic[ID, SessionModel], SessionBackend[ID, SessionModel]):
         self._client = RedisBridge(host, port, password)
         self._key_prefix = key_prefix
 
+    async def shutdown(self) -> None:
+        """Close the connection to the database."""
+        await self._client.close()
+
     async def _before_operation(self):
         """Connect to the database before performing an operation."""
         if not self._client.is_connected:
