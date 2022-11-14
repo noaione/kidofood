@@ -31,7 +31,7 @@ from uuid import UUID, uuid4
 
 import pendulum
 from beanie import Document, Link
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from ._doc import _coerce_to_pendulum
 
@@ -85,6 +85,11 @@ class OrderStatus(int, Enum):
     DONE = 200
 
 
+class AvatarImage(BaseModel):
+    key: str = ""
+    format: str = ""
+
+
 class Merchant(Document):
     merchant_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
@@ -92,7 +97,7 @@ class Merchant(Document):
     address: str
 
     # S3 key
-    avatar: str
+    avatar: AvatarImage = Field(default_factory=AvatarImage)
 
     phone: Optional[str]
     email: Optional[str]
@@ -117,7 +122,7 @@ class FoodItem(Document):
     price: float
     type: ItemType
     # S3 key
-    avatar: str
+    avatar: AvatarImage = Field(default_factory=AvatarImage)
 
     merchant: Link[Merchant]
 
@@ -143,7 +148,7 @@ class User(Document):
     # Multiple addresses
     address: list[str] = Field(default_factory=list)
     # S3 key
-    avatar: str = Field(default="")
+    avatar: AvatarImage = Field(default_factory=AvatarImage)
 
     # merchant association if type is merchant
     merchant: Optional[Link[Merchant]] = Field(default=None)
