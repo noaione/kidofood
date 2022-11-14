@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import Generic, Optional
+from typing import Generic, Optional, Union
+from uuid import UUID
 
 import orjson
+from argon2 import PasswordHasher
 from fastapi import HTTPException
 from fastapi_sessions.backends.session_backend import BackendError, SessionBackend, SessionModel
 from fastapi_sessions.frontends.implementations import CookieParameters, SessionCookie
@@ -13,8 +15,9 @@ from fastapi_sessions.session_verifier import SessionVerifier
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from .db import UserType
+from .db import User, UserType
 from .redbridge import RedisBridge
+from .utils import make_uuid
 
 __all__ = (
     "PartialUserSession",
@@ -22,8 +25,13 @@ __all__ = (
     "RedisBackend",
     "SharedSessionHandler",
     "create_session",
+    "get_session_backend",
     "get_session_verifier",
     "get_session_cookie",
+    "check_session_cookie",
+    "get_argon2",
+    "encrypt_password",
+    "verify_password",
 )
 
 
@@ -39,7 +47,7 @@ class UserSession(PartialUserSession):
     # RememberMe
     remember_me: bool
     remember_latch: bool
-    session_id: str
+    session_id: UUID
 
     def to_partial(self) -> PartialUserSession:
         return PartialUserSession(
@@ -47,6 +55,18 @@ class UserSession(PartialUserSession):
             email=self.email,
             name=self.name,
             type=self.type,
+        )
+
+    @classmethod
+    def from_db(cls, user: User, remember: bool = False):
+        return cls(
+            user_id=str(user.user_id),
+            email=user.email,
+            name=user.name,
+            type=user.type,
+            remember_me=remember,
+            remember_latch=False,
+            session_id=make_uuid(False),
         )
 
 
@@ -112,13 +132,13 @@ class RedisBackend(Generic[ID, SessionModel], SessionBackend[ID, SessionModel]):
 
 
 # Make a shared session between different route file
-class SharedSessionHandler(SessionVerifier[str, UserSession]):
+class SharedSessionHandler(SessionVerifier[UUID, UserSession]):
     def __init__(
         self,
         *,
         identifier: str,
         auto_error: bool,
-        backend: RedisBackend[str, UserSession],
+        backend: RedisBackend[UUID, UserSession],
         auth_http_exception: HTTPException,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
@@ -193,13 +213,60 @@ def create_session(
         )
 
 
+def get_session_backend():
+    if _SESSION_HANDLER is None:
+        raise ValueError("Session not created, call create_session first")
+    return _SESSION_HANDLER.backend
+
+
 async def get_session_verifier(request: Request):
     if _SESSION_HANDLER is None:
         raise ValueError("Session not created, call create_session first")
     return await _SESSION_HANDLER(request)
 
 
-async def get_session_cookie(request: Request):
+def get_session_cookie():
+    if _SESSION_COOKIE is None:
+        raise ValueError("Session not created, call create_session first")
+    return _SESSION_COOKIE
+
+
+async def check_session_cookie(request: Request):
     if _SESSION_COOKIE is None:
         raise ValueError("Session not created, call create_session first")
     return await _SESSION_COOKIE(request)
+
+
+Hashable = Union[str, bytes]
+_ARGON2_HASHER = PasswordHasher()
+
+
+def get_argon2() -> PasswordHasher:
+    return _ARGON2_HASHER
+
+
+async def encrypt_password(password: Hashable, *, loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()):
+    if not isinstance(password, bytes):
+        password = password.encode("utf-8")
+
+    hashed = await loop.run_in_executor(None, get_argon2().hash, password)
+    return hashed
+
+
+async def verify_password(
+    password: str, hashed_password: str, *, loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+) -> tuple[bool, Optional[str]]:
+    """
+    Verify the password with hashed argon2 password.
+
+    Return a tuple of (is_verified, new_hashed_password)
+    """
+
+    is_correct = await loop.run_in_executor(None, get_argon2().verify, hashed_password, password)
+    if is_correct:
+        need_rehash = await loop.run_in_executor(None, get_argon2().check_needs_rehash, hashed_password)
+        if need_rehash:
+            new_hashed = await encrypt_password(password, loop=loop)
+            return True, new_hashed
+        return True, None
+    return False, None
