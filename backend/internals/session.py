@@ -7,6 +7,7 @@ from uuid import UUID
 
 import orjson
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from fastapi import HTTPException
 from fastapi_sessions.backends.session_backend import BackendError, SessionBackend, SessionModel
 from fastapi_sessions.frontends.implementations import CookieParameters, SessionCookie
@@ -41,6 +42,15 @@ class PartialUserSession(BaseModel):
     email: str
     name: str
     type: UserType
+
+    @classmethod
+    def from_db(cls, user: User):
+        return cls(
+            user_id=str(user.user_id),
+            email=user.email,
+            name=user.name,
+            type=user.type,
+        )
 
 
 class UserSession(PartialUserSession):
@@ -96,7 +106,7 @@ class RedisBackend(Generic[ID, SessionModel], SessionBackend[ID, SessionModel]):
 
     async def _check_key(self, session_id: ID) -> bool:
         """Check if a key exists."""
-        return await self._client.exists(self._key_prefix + session_id)
+        return await self._client.exists(self._key_prefix + str(session_id))
 
     def _dump_json(self, data: SessionModel) -> str:
         return orjson.dumps(
@@ -115,9 +125,7 @@ class RedisBackend(Generic[ID, SessionModel], SessionBackend[ID, SessionModel]):
         data = await self._client.get(self._key_prefix + str(session_id))
         if not data:
             return
-        data_json = orjson.loads(data)
-
-        return UserSession.parse_obj(data_json)
+        return UserSession.parse_obj(data)
 
     async def update(self, session_id: ID, data: SessionModel) -> None:
         await self._before_operation()
@@ -194,8 +202,8 @@ def create_session(
         secure = os.getenv("NODE_ENV") == "production"
         cookie_params = CookieParameters(max_age=max_age, secure=secure)
         _SESSION_COOKIE = SessionCookie(
-            cookie_name="kidofood/session",
-            identifier="kidofood/ident",
+            cookie_name="kidofood|session",
+            identifier="kidofood|ident",
             auto_error=True,
             secret_key=secret_key,
             cookie_params=cookie_params,
@@ -203,7 +211,7 @@ def create_session(
 
     if _SESSION_HANDLER is None:
         _SESSION_HANDLER = SharedSessionHandler(
-            identifier="kidofood/ident",
+            identifier="kidofood|ident",
             auto_error=True,
             backend=RedisBackend(redis_host, redis_port, redis_password),
             auth_http_exception=HTTPException(
@@ -231,10 +239,10 @@ def get_session_cookie():
     return _SESSION_COOKIE
 
 
-async def check_session_cookie(request: Request):
+def check_session_cookie(request: Request):
     if _SESSION_COOKIE is None:
         raise ValueError("Session not created, call create_session first")
-    return await _SESSION_COOKIE(request)
+    return _SESSION_COOKIE(request)
 
 
 Hashable = Union[str, bytes]
@@ -262,7 +270,10 @@ async def verify_password(
     Return a tuple of (is_verified, new_hashed_password)
     """
 
-    is_correct = await loop.run_in_executor(None, get_argon2().verify, hashed_password, password)
+    try:
+        is_correct = await loop.run_in_executor(None, get_argon2().verify, hashed_password, password)
+    except VerifyMismatchError:
+        is_correct = False
     if is_correct:
         need_rehash = await loop.run_in_executor(None, get_argon2().check_needs_rehash, hashed_password)
         if need_rehash:

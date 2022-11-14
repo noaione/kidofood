@@ -33,12 +33,13 @@ from fastapi.datastructures import Default
 from fastapi.responses import ORJSONResponse, Response
 
 from internals.db import User
-from internals.models import PartialLogin
+from internals.models import PartialLogin, PartialRegister
 from internals.responses import ResponseType
 from internals.session import (
     PartialUserSession,
     UserSession,
     check_session_cookie,
+    encrypt_password,
     get_session_backend,
     get_session_cookie,
     get_session_verifier,
@@ -49,13 +50,17 @@ __all__ = ("router",)
 router = APIRouter(
     prefix="/user",
     tags=["User"],
-    dependencies=[Depends(check_session_cookie)],
     default_response_class=Default(ORJSONResponse),
 )
 logger = logging.getLogger("Routes.User")
 
 
-@router.get("/me", summary="Get current user", response_model=ResponseType[PartialUserSession])
+@router.get(
+    "/me",
+    summary="Get current user",
+    response_model=ResponseType[PartialUserSession],
+    dependencies=[Depends(check_session_cookie)],
+)
 async def auth_me(session: UserSession = Depends(get_session_verifier)):
     """
     This route will return the current user information from the cookie
@@ -66,7 +71,7 @@ async def auth_me(session: UserSession = Depends(get_session_verifier)):
 
 
 @router.post("/enter", summary="Login to KidoFood", response_model=ResponseType[PartialUserSession])
-async def auth_enter(user: PartialLogin, response: Response):
+async def auth_enter(user: PartialLogin):
     """
     This route will try to login the user with the given information.
     """
@@ -90,14 +95,15 @@ async def auth_enter(user: PartialLogin, response: Response):
 
     logger.info(f"User {user.email} authenticated, setting session")
     session = UserSession.from_db(get_user, user.remember)
+    json_resp = ResponseType[PartialUserSession](data=session.to_partial()).to_orjson()
     backend = get_session_backend()
     await backend.create(session.session_id, session)
-    get_session_cookie().attach_to_response(response, session.session_id)
+    get_session_cookie().attach_to_response(json_resp, session.session_id)
 
-    return ResponseType[PartialUserSession](data=session.to_partial()).to_orjson()
+    return json_resp
 
 
-@router.post("/leave", summary="Logout from KidoFood", response_model=ResponseType[None])
+@router.post("/leave", summary="Logout from KidoFood", response_model=ResponseType)
 async def auth_leave(response: Response, session_id: UUID = Depends(check_session_cookie)):
     """
     This route will remove your current session.
@@ -105,6 +111,33 @@ async def auth_leave(response: Response, session_id: UUID = Depends(check_sessio
 
     backend = get_session_backend()
     await backend.delete(session_id=session_id)
-    get_session_cookie().delete_from_response(response)
+    default_resp = ResponseType().to_orjson()
+    get_session_cookie().delete_from_response(default_resp)
 
-    return ResponseType().to_orjson()
+    return default_resp
+
+
+@router.post(
+    "/register",
+    summary="Register to KidoFood",
+    response_model=ResponseType[PartialUserSession],
+)
+async def auth_register(user: PartialRegister, response: Response):
+    """
+    This route will try to register the user with the given information.
+    """
+
+    logger.info(f"Trying to register {user.email} with {user.password}")
+    get_user = await User.find(Eq(User.email, user.email)).first_or_none()
+    if get_user is not None:
+        logger.error(f"User {user.email} already exists")
+        return ResponseType(error="User already exists", code=409).to_orjson(409)
+
+    logger.info(f"User {user.email} not found, creating new user")
+    hash_pass = await encrypt_password(user.password)
+    new_user = User(email=user.email, name=user.name, password=hash_pass, avatar="")
+    await new_user.insert()
+    user_sess = PartialUserSession.from_db(new_user)
+    logger.info(f"User {user.email} created, responding...")
+
+    return ResponseType[PartialUserSession](data=user_sess).to_orjson()
