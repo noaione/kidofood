@@ -22,10 +22,61 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from typing import Any
 from uuid import uuid4
+from pathlib import Path
+from textwrap import dedent
 
-__all__ = ("make_uuid",)
+__all__ = (
+    "make_uuid",
+    "to_boolean",
+    "get_version",
+    "get_description",
+)
+
+# Backend root
+ROOT_PATH = Path(__file__).absolute().parent.parent
 
 
 def make_uuid():
     return str(uuid4())
+
+
+def to_boolean(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.lower() in ("yes", "true", "t", "y", "1")
+    return bool(value)
+
+
+def get_version():
+    pyproject = ROOT_PATH / "pyproject.toml"
+    pyproject_data = pyproject.read_text().split("\n\n")
+
+    version = None
+    for section in pyproject_data:
+        if section.startswith("[tool.poetry]"):
+            for line in section.splitlines():
+                if line.startswith("version ="):
+                    version = line.split("=")[1].strip().strip('"')
+                    break
+    return version
+
+
+def get_description():
+    description = """Welcome to KidoFood API Documentation
+
+    Source Code: [noaione/kidofood](https://github.com/noaione/kidofood)
+
+    This documentation serves as a guide for developers who want to use KidoFood API.
+    For their own application. This documentation is still in development and will be
+    updated regularly. If you have any questions, please contact me on GitHub Issue on
+    the link above.
+
+    Written with [FastAPI](https://fastapi.tiangolo.com/)
+
+    ## Changelog
+    - 0.1.0
+        - Initial Release
+    """
+
+    return dedent(description)
