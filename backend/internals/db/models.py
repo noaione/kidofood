@@ -25,25 +25,26 @@ SOFTWARE.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from functools import partial as ftpartial
+from typing import Optional
+from uuid import UUID, uuid4
 
-from bson import ObjectId
-from odmantic import Field, Model, Reference, query
+import pendulum
+from beanie import Link
+from pydantic import Field
 
-from ..utils import make_uuid
-
-if TYPE_CHECKING:
-    from odmantic import AIOEngine
+from ._doc import DocumentX
 
 __all__ = (
     "ItemType",
-    "OrderStatus",
     "UserType",
+    "OrderStatus",
     "Merchant",
     "FoodItem",
     "User",
     "FoodOrder",
 )
+pendulum_utc = ftpartial(pendulum.now, tz="UTC")
 
 
 class ItemType(str, Enum):
@@ -84,61 +85,80 @@ class OrderStatus(int, Enum):
     DONE = 200
 
 
-class Merchant(Model):
-    merchant_id: str = Field(default_factory=make_uuid, unique=True)
+class Merchant(DocumentX):
+    merchant_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
     description: str
-    # S3 key
-    logo: str
     address: str
+
+    # S3 key
+    avatar: str
+
     phone: Optional[str]
     email: Optional[str]
     website: Optional[str]
 
-    class Config:
-        collection = "FoodMerchants"
+    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+
+    class Settings:
+        name = "FoodMerchants"
+        use_state_management = True
 
 
-class FoodItem(Model):
-    item_id: str = Field(default_factory=make_uuid, unique=True)
-    name: str = Field(index=True)
+class FoodItem(DocumentX):
+    item_id: UUID = Field(default_factory=uuid4, unique=True)
+    name: str
     stock: int
     price: float
-    type: ItemType = Field(index=True)
+    type: ItemType
+    # S3 key
+    avatar: str
 
-    merchant: Merchant = Reference()
+    merchant: Link[Merchant]
 
-    class Config:
-        collection = "FoodItems"
+    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+
+    class Settings:
+        name = "FoodItems"
+        use_state_management = True
 
 
-class User(Model):
-    user_id: str = Field(default_factory=make_uuid, unique=True)
+class User(DocumentX):
+    user_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
-    email: str = Field(index=True, unique=True)
+    email: str = Field(unique=True)
     # Hashed password (scrypt)
     password: str
-    type: UserType = Field(index=True)
+    type: UserType = UserType.CUSTOMER
     # Multiple addresses
     address: list[str] = Field(default_factory=list)
+    # S3 key
+    avatar: str
 
-    merchant: Optional[Merchant] = Reference()
+    # merchant association if type is merchant
+    merchant: Optional[Link[Merchant]]
 
-    class Config:
-        collection = "Users"
+    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+
+    class Settings:
+        name = "Users"
+        use_state_management = True
 
 
-class FoodOrder(Model):
-    order_id: str = Field(default_factory=make_uuid, unique=True)
-    items: list[ObjectId]
+class FoodOrder(DocumentX):
+    order_id: UUID = Field(default_factory=uuid4, unique=True)
+    items: list[Link[FoodItem]]
     total: float
-    user: User = Reference()
-    status: OrderStatus = Field(index=True)
+    user: Link[User]
+    status: OrderStatus = OrderStatus.PENDING
     target_address: str
+
+    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
 
     class Config:
         collection = "FoodOrders"
-
-    async def get_items(self, engine: AIOEngine):
-        food_item = await engine.find(FoodItem, query.in_(FoodItem.id, self.items))
-        return food_item
+        use_state_management = True

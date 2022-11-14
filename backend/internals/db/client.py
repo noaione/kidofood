@@ -28,12 +28,14 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
+from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
-from odmantic import AIOEngine
 from pymongo.errors import PyMongoError
 
 if TYPE_CHECKING:
     from motor.core import AgnosticClient, AgnosticDatabase
+
+from .models import FoodItem, FoodOrder, Merchant, User
 
 __all__ = ("KFDatabase",)
 
@@ -64,11 +66,6 @@ class KFDatabase:
 
         self._client: AgnosticClient = AsyncIOMotorClient(self._url)
         self._db: AgnosticDatabase = self._client[self._dbname]
-        self._engine = AIOEngine(client=self._client, database=self._dbname)
-
-    @property
-    def engine(self):
-        return self._engine
 
     @property
     def db(self):
@@ -103,3 +100,14 @@ class KFDatabase:
             return False, 99999
         except (ValueError, PyMongoError):
             return False, 99999
+
+    async def connect(self):
+        await init_beanie(
+            database=self._db,
+            document_models=[
+                FoodItem,
+                FoodOrder,
+                Merchant,
+                User,
+            ],
+        )
