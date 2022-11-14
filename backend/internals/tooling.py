@@ -29,13 +29,11 @@ import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
-from typing import TYPE_CHECKING, Optional
+from pathlib import Path
+from typing import Optional
 
 import coloredlogs
 from dotenv.main import DotEnv
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 __all__ = (
     "RollingFileHandler",
