@@ -35,8 +35,8 @@ from internals.session import UserSession, check_session_cookie, get_session_ver
 from internals.utils import to_uuid
 
 __all__ = ("router",)
-router = APIRouter(prefix="/server", tags=["Merchant"])
-logger = logging.getLogger("Routes.Server")
+router = APIRouter(prefix="/merchant", tags=["Merchant"])
+logger = logging.getLogger("Routes.Merchant")
 
 
 @router.get(
