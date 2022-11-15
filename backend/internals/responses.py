@@ -24,15 +24,42 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from typing import Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 import orjson
-from fastapi.responses import ORJSONResponse
+from bson import ObjectId
+from fastapi.responses import JSONResponse
 from pydantic.generics import GenericModel
+
+from pendulum import DateTime, Time
 
 DataType = TypeVar("DataType")
 
-__all__ = ("ResponseType",)
+__all__ = (
+    "ORJSONXResponse",
+    "ResponseType",
+)
+
+
+def ORJsonEncoder(obj: Any):
+    if isinstance(obj, DateTime):
+        return obj.for_json()
+    if isinstance(obj, Time):
+        return obj.for_json()
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    raise TypeError
+
+
+class ORJSONXResponse(JSONResponse):
+    media_type = "application/json"
+
+    def render(self, content: Any) -> bytes:
+        return orjson.dumps(
+            content,
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
+            default=ORJsonEncoder,
+        )
 
 
 class ResponseType(GenericModel, Generic[DataType]):
@@ -41,11 +68,13 @@ class ResponseType(GenericModel, Generic[DataType]):
     data: Optional[DataType] = None
 
     def to_orjson(self, status: int = 200):
-        return ORJSONResponse(self.dict(), status_code=status)
+        return ORJSONXResponse(self.dict(), status_code=status)
 
     def to_string(self):
         data = self.dict()
-        return orjson.dumps(data, option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_UUID).decode("utf-8")
+        return orjson.dumps(data, default=ORJsonEncoder, option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_UUID).decode(
+            "utf-8"
+        )
 
     class Config:
         schema_extra = {

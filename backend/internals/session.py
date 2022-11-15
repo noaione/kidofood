@@ -8,6 +8,7 @@ from uuid import UUID
 import orjson
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from beanie import Link
 from fastapi import HTTPException
 from fastapi_sessions.backends.session_backend import BackendError, SessionBackend, SessionModel
 from fastapi_sessions.frontends.implementations import CookieParameters, SessionCookie
@@ -16,7 +17,7 @@ from fastapi_sessions.session_verifier import SessionVerifier
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from .db import User, UserType
+from .db import Merchant, User, UserType
 from .redbridge import RedisBridge
 from .utils import make_uuid
 
@@ -54,6 +55,7 @@ class PartialUserSession(BaseModel):
 
 
 class UserSession(PartialUserSession):
+    merchant_info: Link[Merchant] = None
     # RememberMe
     remember_me: bool
     remember_latch: bool
@@ -74,6 +76,7 @@ class UserSession(PartialUserSession):
             email=user.email,
             name=user.name,
             type=user.type,
+            merchant_info=user.merchant,
             remember_me=remember,
             remember_latch=False,
             session_id=make_uuid(False),
@@ -113,9 +116,7 @@ class RedisBackend(Generic[ID, SessionModel], SessionBackend[ID, SessionModel]):
         return await self._client.exists(self._key_prefix + str(session_id))
 
     def _dump_json(self, data: SessionModel) -> str:
-        return orjson.dumps(
-            data.dict(), option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_SERIALIZE_UUID
-        ).decode()
+        return orjson.dumps(data.dict(), option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_SERIALIZE_UUID).decode()
 
     async def create(self, session_id: ID, data: SessionModel) -> None:
         await self._before_operation()

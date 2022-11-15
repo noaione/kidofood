@@ -29,6 +29,7 @@ from uuid import UUID, uuid4
 
 __all__ = (
     "make_uuid",
+    "to_uuid",
     "to_boolean",
     "get_version",
     "get_description",
@@ -51,6 +52,13 @@ def make_uuid(stringify: bool = True) -> str:
 def make_uuid(stringify: bool = True) -> Union[str, UUID]:
     m = uuid4()
     return str(m) if stringify else m
+
+
+def to_uuid(uuid: str) -> UUID:
+    try:
+        return UUID(uuid)
+    except ValueError:
+        raise ValueError("Invalid UUID")
 
 
 def to_boolean(value: Any) -> bool:
