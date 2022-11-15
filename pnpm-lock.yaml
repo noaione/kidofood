@@ -13,6 +13,7 @@ importers:
 
   frontend:
     specifiers:
+      '@heroicons/react': ^2.0.13
       '@kachkaev/react-inline-js': 0.4.0
       '@rematch/core': 2.2.0
       '@rematch/immer': 2.1.3
@@ -43,6 +44,7 @@ importers:
       tailwindcss: 3.2.4
       typescript: 4.8.4
     dependencies:
+      '@heroicons/react': 2.0.13_react@18.2.0
       '@kachkaev/react-inline-js': 0.4.0_react@18.2.0
       '@rematch/core': 2.2.0_redux@4.2.0
       '@rematch/immer': 2.1.3_@rematch+core@2.2.0+redux@4.2.0
@@ -261,6 +263,14 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /@heroicons/react/2.0.13_react@18.2.0:
+    resolution: {integrity: sha512-iSN5XwmagrnirWlYEWNPdCDj9aRYVD/lnK3JlsC9/+fqGF80k8C7rl+1HCvBX0dBoagKqOFBs6fMhJJ1hOg1EQ==}
+    peerDependencies:
+      react: '>= 16'
+    dependencies:
+      react: 18.2.0
+    dev: false
 
   /@humanwhocodes/config-array/0.11.7:
     resolution: {integrity: sha512-kBbPWzN8oVMLb0hOUYXhmxggL/1cJE6ydvjDIGi9EnAGUyA7cLVKQg+d/Dsm+KZwx2czGHrCmMVLiyg8s5JPKw==}

@@ -18,6 +18,7 @@
     },
     "homepage": "https://github.com/noaione/kidofood/tree/master/frontend#readme",
     "dependencies": {
+        "@heroicons/react": "^2.0.13",
         "@kachkaev/react-inline-js": "0.4.0",
         "@rematch/core": "2.2.0",
         "@rematch/immer": "2.1.3",

@@ -16,7 +16,7 @@ const Config = {
     theme: {
         extend: {
             colors: {
-                gray: colors.neutral,
+                gray: colors.zinc,
             },
         },
     },
