@@ -18,5 +18,8 @@ const nextConfig = {
             },
         ];
     },
+    images: {
+        domains: ["s3.ap-southeast-1.wasabisys.com", "cdn.discordapp.com", "cdn.discord.com"],
+    },
 };
 module.exports = nextConfig;
