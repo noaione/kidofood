@@ -1,11 +1,10 @@
-const withPreact = require("next-plugin-preact");
-
 /**
  * @type {import("next").NextConfig}
  */
 const nextConfig = {
     productionBrowserSourceMaps: true,
     swcMinify: true,
+    reactStrictMode: true,
     headers: async () => {
         return [
             {
@@ -20,4 +19,4 @@ const nextConfig = {
         ];
     },
 };
-module.exports = withPreact(nextConfig);
+module.exports = nextConfig;

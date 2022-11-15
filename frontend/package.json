@@ -8,24 +8,21 @@
         "start": "next start --port 5451"
     },
     "repository": {
-      "type": "git",
-      "url": "git+https://github.com/noaione/kidofood.git"
+        "type": "git",
+        "url": "git+https://github.com/noaione/kidofood.git"
     },
     "author": "noaione <noaione@n4o.xyz>",
     "license": "MIT",
     "bugs": {
-      "url": "https://github.com/noaione/kidofood/issues"
+        "url": "https://github.com/noaione/kidofood/issues"
     },
     "homepage": "https://github.com/noaione/kidofood/tree/master/frontend#readme",
     "dependencies": {
         "@kachkaev/react-inline-js": "0.4.0",
         "next": "13.0.3",
         "next-plugin-preact": "3.0.7",
-        "preact": "10.11.2",
-        "preact-render-to-string": "5.2.6",
-        "react": "npm:@preact/compat",
-        "react-dom": "npm:@preact/compat",
-        "react-ssr-prepass": "npm:preact-ssr-prepass"
+        "react": "18.2.0",
+        "react-dom": "18.2.0"
     },
     "devDependencies": {
         "@types/node": "16.11.7",
