@@ -5,6 +5,7 @@ import { InlineJs } from "@kachkaev/react-inline-js";
 
 const THEME_CHECKER_JS = `
 // Helper
+const STORAGE_KEY = "kidofood.theme";
 const isNullified = function(data) {
     return typeof data === "undefined" || data === null;
 }
@@ -16,7 +17,7 @@ if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").match
     systemPreferDark = true;
 }
 try {
-    const themeStorage = localStorage.getItem("theme");
+    const themeStorage = localStorage.getItem(STORAGE_KEY);
     if (!isNullified(themeStorage)) {
         userPreferDark = themeStorage === "dark" ? true : false;
     }
@@ -24,24 +25,15 @@ try {
 if (isNullified(userPreferDark)) {
     if (systemPreferDark) {
         document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
+        localStorage.setItem(STORAGE_KEY, "dark");
     } else {
-        localStorage.setItem("theme", "light");
+        localStorage.setItem(STORAGE_KEY, "light");
     }
 } else {
     if (userPreferDark) {
         document.documentElement.classList.add("dark");
     }
 }
-
-// Theme toggler
-const toggleTheme = function() {
-    try {
-        const isDark = document.documentElement.classList.contains("dark");
-        isDark ? document.documentElement.classList.remove("dark") : document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", isDark ? "light" : "dark");
-    } catch (e) {};
-};
 `;
 
 class MyDocument extends Document {
