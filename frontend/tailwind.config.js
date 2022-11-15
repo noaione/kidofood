@@ -7,7 +7,10 @@ const Config = {
     content: [
         "./components/**/*.{js,ts,jsx,tsx}",
         "./lib/**/*.{js,ts,jsx,tsx}",
+        "./models/**/*.{js,ts,jsx,tsx}",
         "./pages/**/*.{js,ts,jsx,tsx}",
+        "./public/**/*.{js,ts,jsx,tsx,html,css}",
+        "./states/**/*.{js,ts,jsx,tsx}",
     ],
     darkMode: "class",
     theme: {

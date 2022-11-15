@@ -21,6 +21,7 @@
     },
     "isort.importStrategy": "fromEnvironment",
     "python.languageServer": "Pylance",
-    "autoDocstring.docstringFormat": "sphinx"
+    "autoDocstring.docstringFormat": "sphinx",
+    "tailwindCSS.emmetCompletions": true
   }
 }
