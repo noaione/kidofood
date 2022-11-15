@@ -1,4 +1,4 @@
-import { Nullable } from "./type";
+import { Nullable, UndefinedOr } from "./type";
 import { isDOMAvailable, isNone } from "./utils";
 
 /**
@@ -10,10 +10,10 @@ export const THEME_KEY = "kidofood.theme";
  * Get the website dark mode status.
  * @returns true if dark mode is enabled
  */
-export const getDarkMode = (): boolean | null => {
+export const getDarkMode = (): Nullable<boolean> => {
     if (!isDOMAvailable()) return null;
 
-    let userPreferDark: Nullable<boolean>;
+    let userPreferDark: UndefinedOr<boolean>;
     let systemPreferDark = false;
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
         systemPreferDark = true;
