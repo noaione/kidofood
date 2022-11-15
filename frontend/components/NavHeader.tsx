@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 
 import CartIcon from "@heroicons/react/24/outline/ShoppingCartIcon";
 import DarkIcon from "@heroicons/react/24/outline/MoonIcon";
-import LightIcon from "@heroicons/react/24/outline/SunIcon";
+import LightIcon from "@heroicons/react/24/solid/SunIcon";
 import LoginIcon from "@heroicons/react/24/outline/ArrowRightOnRectangleIcon";
 import UserIcon from "@heroicons/react/24/outline/UserIcon";
 
