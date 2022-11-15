@@ -8,11 +8,13 @@
     },
     "npm.packageManager": "pnpm",
     "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--config=pyproject.toml"
+    ],
     "python.analysis.diagnosticMode": "workspace",
-    "python.languageServer": "Pylance",
-    "autoDocstring.docstringFormat": "sphinx",
     "python.linting.enabled": true,
     "python.analysis.typeCheckingMode": "off",
+    "isort.check": true,
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,

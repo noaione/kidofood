@@ -19,7 +19,8 @@
       "backend/": true,
       "frontend/": true
     },
-    "isort.check": true,
     "isort.importStrategy": "fromEnvironment",
+    "python.languageServer": "Pylance",
+    "autoDocstring.docstringFormat": "sphinx"
   }
 }
