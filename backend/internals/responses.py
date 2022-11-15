@@ -40,6 +40,7 @@ __all__ = (
     "ResponseType",
     "PaginationInfo",
     "PaginatedResponseType",
+    "PaginatedMultiResponseType",
 )
 
 
@@ -101,4 +102,10 @@ class PaginationInfo:
 
 
 class PaginatedResponseType(ResponseType[DataType]):
+    data: list[DataType] = []
     page_info: PaginationInfo
+
+
+class PaginatedMultiResponseType(ResponseType[DataType]):
+    data: DataType = {}
+    page_info: dict[str, PaginationInfo] = {}
