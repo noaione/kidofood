@@ -1,6 +1,8 @@
 import Head from "next/head";
 import React from "react";
 
+import Image from "next/image";
+
 export default function Main() {
     return (
         <>
@@ -9,10 +11,12 @@ export default function Main() {
             </Head>
             <main className="mx-auto">
                 <div className="flex flex-col items-center mt-16">
-                    <img
+                    <Image
                         src="https://cdn.discordapp.com/emojis/774990963310985226.gif"
                         alt="InaNod"
                         className="text-center align-middle"
+                        width={100}
+                        height={100}
                     />
                 </div>
                 <h1 className="mt-6 text-3xl font-semibold text-center">Welcome!</h1>
