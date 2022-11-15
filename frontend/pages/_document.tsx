@@ -48,7 +48,7 @@ class MyDocument extends Document {
                 <Head>
                     <InlineJs code={THEME_CHECKER_JS} />
                 </Head>
-                <body className="bg-white dark:bg-gray-900 text-black dark:text-white">
+                <body className="bg-white dark:bg-gray-800 text-black dark:text-white transition-colors">
                     <Main />
                     <NextScript />
                 </body>
