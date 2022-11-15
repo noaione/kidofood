@@ -39,6 +39,7 @@ __all__ = (
     "ItemType",
     "UserType",
     "OrderStatus",
+    "AvatarImage",
     "Merchant",
     "FoodItem",
     "User",
@@ -118,6 +119,7 @@ class Merchant(Document):
 class FoodItem(Document):
     item_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
+    description: str
     stock: int
     price: float
     type: ItemType
