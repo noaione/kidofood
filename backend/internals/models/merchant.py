@@ -39,7 +39,7 @@ __all__ = ("MerchantResponse",)
 
 @dataclass
 class MerchantResponse:
-    id: int
+    id: str
     name: str
     description: str
     address: str
@@ -73,7 +73,7 @@ class MerchantResponse:
         if merchant.avatar and merchant.avatar.key:
             avatar = AvatarResponse.from_db(merchant.avatar, "merchant")
         return cls(
-            id=merchant.id,
+            id=str(merchant.merchant_id),
             name=merchant.name,
             description=merchant.description,
             address=merchant.address,

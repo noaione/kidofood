@@ -70,7 +70,7 @@ class FoodItemResponse:
         if db.avatar and db.avatar.key:
             avatar = AvatarResponse.from_db(db.avatar, "items")
         return cls(
-            id=db.item_id,
+            id=str(db.item_id),
             name=db.name,
             description=db.description,
             price=db.price,
