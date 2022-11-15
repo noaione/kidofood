@@ -9,12 +9,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
       
       - name: Move to Backend
         run: cd backend
@@ -27,13 +27,15 @@ jobs:
 
       - name: Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
-        run: poetry install --no-root
+        run: |
+          ls -alh
+          poetry install --no-root
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
 
       - name: Lint Everything
