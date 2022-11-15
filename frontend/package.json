@@ -19,10 +19,15 @@
     "homepage": "https://github.com/noaione/kidofood/tree/master/frontend#readme",
     "dependencies": {
         "@kachkaev/react-inline-js": "0.4.0",
+        "@rematch/core": "2.2.0",
+        "@rematch/immer": "2.1.3",
+        "axios": "1.1.3",
         "next": "13.0.3",
         "next-plugin-preact": "3.0.7",
         "react": "18.2.0",
-        "react-dom": "18.2.0"
+        "react-dom": "18.2.0",
+        "react-redux": "8.0.5",
+        "redux": "4.2.0"
     },
     "devDependencies": {
         "@types/node": "16.11.7",
