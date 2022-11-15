@@ -35,7 +35,8 @@ jobs:
           poetry install --no-root
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
 
-      - name: Lint Everything
+      - name: Lint Backend
         run: |
+          cd backend
           source .venv/bin/activate
           python3 pipelines/multi-lint.py
