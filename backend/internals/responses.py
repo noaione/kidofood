@@ -24,6 +24,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Generic, Optional, TypeVar
 
 import orjson
@@ -37,6 +38,8 @@ DataType = TypeVar("DataType")
 __all__ = (
     "ORJSONXResponse",
     "ResponseType",
+    "PaginationInfo",
+    "PaginatedResponseType",
 )
 
 
@@ -83,3 +86,19 @@ class ResponseType(GenericModel, Generic[DataType]):
                 "code": 200,
             }
         }
+
+
+@dataclass
+class PaginationInfo:
+    total: int
+    """The total data count on all pages"""
+    count: int
+    """The current data count"""
+    per_page: int
+    """How much data exist per page"""
+    next_cursor: Optional[str] = None
+    """Next cursor for pagination"""
+
+
+class PaginatedResponseType(ResponseType[DataType]):
+    page_info: PaginationInfo
