@@ -43,8 +43,8 @@ class FoodItemResponse:
     id: str
     name: str
     description: str
-    price: int
-    availability: bool
+    price: float
+    stock: int
     type: ItemType
     image: Optional[AvatarResponse] = None
     created_at: pendulum.DateTime = field(default_factory=pendulum_utc)
@@ -74,7 +74,7 @@ class FoodItemResponse:
             name=db.name,
             description=db.description,
             price=db.price,
-            availability=db.stock > 0,
+            availability=db.stock,
             type=db.type,
             image=avatar,
             created_at=db.created_at,
