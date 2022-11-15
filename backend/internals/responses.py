@@ -29,9 +29,8 @@ from typing import Any, Generic, Optional, TypeVar
 import orjson
 from bson import ObjectId
 from fastapi.responses import JSONResponse
-from pydantic.generics import GenericModel
-
 from pendulum import DateTime, Time
+from pydantic.generics import GenericModel
 
 DataType = TypeVar("DataType")
 
