@@ -212,7 +212,7 @@ async def search_merchants_get(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedMultiResponseType(error="Invalid cursor", code=400).to_orjson(400)
+            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
         args.append(Merchant.id >= cursor_id)
 
     merchants = await Merchant.find(args).sort(f"{direction}_id").limit(act_limit).project(ProjectionMerchant).to_list()
@@ -261,7 +261,7 @@ async def search_items_get(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedMultiResponseType(error="Invalid cursor", code=400).to_orjson(400)
+            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
         args.append(FoodItem.id >= cursor_id)
 
     food_items = (
