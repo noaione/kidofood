@@ -38,4 +38,4 @@ jobs:
       - name: Lint Backend
         run: |
           cd backend
-          pnpm lint
+          python3 pipelines/multi-lint.py
