@@ -132,10 +132,10 @@ async def search_get(
         items_args.append(FoodItem.id >= cursor_id_b)
 
     merchants = (
-        await Merchant.find(merch_args).sort(f"{direction}_id").limit(act_limit).project(ProjectionMerchant).to_list()
+        await Merchant.find(*merch_args).sort(f"{direction}_id").limit(act_limit).project(ProjectionMerchant).to_list()
     )
     food_items = (
-        await FoodItem.find(items_args).sort(f"{direction}_id").limit(act_limit).project(ProjectionFoodItem).to_list()
+        await FoodItem.find(*items_args).sort(f"{direction}_id").limit(act_limit).project(ProjectionFoodItem).to_list()
     )
     if len(merchants) < 1 and len(food_items) < 1:
         return PaginatedMultiResponseType(
@@ -182,13 +182,13 @@ async def search_get(
             "merchants": PaginationInfo(
                 total=merchant_count,
                 count=int(len(coerced_merchant)),
-                cursor=last_item_merchant.id if last_item_merchant is not None else None,
+                cursor=str(last_item_merchant.id) if last_item_merchant is not None else None,
                 per_page=limit,
             ),
             "items": PaginationInfo(
                 total=food_items_count,
                 count=int(len(coerced_items)),
-                cursor=last_item_item.id if last_item_item is not None else None,
+                cursor=str(last_item_item.id) if last_item_item is not None else None,
                 per_page=limit,
             ),
         },
@@ -215,7 +215,9 @@ async def search_merchants_get(
             return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
         args.append(Merchant.id >= cursor_id)
 
-    merchants = await Merchant.find(args).sort(f"{direction}_id").limit(act_limit).project(ProjectionMerchant).to_list()
+    merchants = (
+        await Merchant.find(*args).sort(f"{direction}_id").limit(act_limit).project(ProjectionMerchant).to_list()
+    )
     if len(merchants) < 1:
         return PaginatedResponseType[MerchantSearch](
             data=[],
@@ -238,7 +240,7 @@ async def search_merchants_get(
         page_info=PaginationInfo(
             total=merchant_count,
             count=int(len(merchants)),
-            cursor=last_item.id if last_item is not None else None,
+            cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()
@@ -265,7 +267,7 @@ async def search_items_get(
         args.append(FoodItem.id >= cursor_id)
 
     food_items = (
-        await FoodItem.find(args).sort(f"{direction}_id").limit(act_limit).project(ProjectionFoodItem).to_list()
+        await FoodItem.find(*args).sort(f"{direction}_id").limit(act_limit).project(ProjectionFoodItem).to_list()
     )
     if len(food_items) < 1:
         return PaginatedResponseType[FoodItemSearch](
@@ -289,7 +291,7 @@ async def search_items_get(
         page_info=PaginationInfo(
             total=food_items_count,
             count=int(len(food_items)),
-            cursor=last_item.id if last_item is not None else None,
+            cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()
