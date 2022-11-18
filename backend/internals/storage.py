@@ -2,6 +2,7 @@ import asyncio
 from abc import abstractmethod
 from dataclasses import dataclass
 from io import BytesIO
+from mimetypes import guess_type
 from pathlib import Path
 from typing import Optional, Union, cast
 
@@ -160,9 +161,11 @@ class LocalStorage(AbstractStorage):
         path = self._root / type / key / key_id.replace("-", "") / filename
         try:
             stat_data = await path.stat()
+            guess_mime, _ = guess_type(filename)
+            guess_mime = guess_mime or "application/octet-stream"
             return FileObject(
                 purepath,
-                "application/octet-stream",
+                guess_mime,
                 stat_data.st_size,
                 pendulum.from_timestamp(stat_data.st_mtime),
             )
