@@ -33,7 +33,7 @@ from fastapi import APIRouter, Depends
 
 from internals.db import FoodItem, Merchant, UserType
 from internals.models import FoodItemResponse, MerchantResponse
-from internals.responses import ResponseType, PaginatedResponseType, PaginationInfo
+from internals.responses import PaginatedResponseType, PaginationInfo, ResponseType
 from internals.session import UserSession, check_session_cookie, get_session_verifier
 from internals.utils import to_uuid
 
