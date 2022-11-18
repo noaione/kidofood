@@ -2,14 +2,15 @@ from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
 from fastapi.datastructures import Default
-from fastapi.responses import ORJSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 
 from internals.db import KFDatabase
+from internals.responses import ORJSONXResponse
 from internals.session import create_session, get_session_backend
 from internals.storage import create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean
-from routes import server, user
+from routes import images, merchant, search, server, user
 
 ROOT_DIR = Path(__file__).absolute().parent
 env_config = get_env_config()
@@ -64,12 +65,7 @@ async def on_app_startup():
     S3_BUCKET = env_config.get("S3_BUCKET")
 
     # S3 all available?
-    if (
-        S3_HOSTNAME is not None
-        and S3_ACCESS_KEY is not None
-        and S3_SECRET_KEY is not None
-        and S3_BUCKET is not None
-    ):
+    if S3_HOSTNAME is not None and S3_ACCESS_KEY is not None and S3_SECRET_KEY is not None and S3_BUCKET is not None:
         logger.info("S3 storage available, connecting...")
         await create_s3_server(S3_HOSTNAME, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
         logger.info("Connected to S3 storage!")
@@ -105,7 +101,10 @@ async def on_app_shutdown():
         pass
 
 
-ORJSONDefault = Default(ORJSONResponse)
+ORJSONDefault = Default(ORJSONXResponse)
+router.include_router(images.router)
+router.include_router(merchant.router, default_response_class=ORJSONDefault)
+router.include_router(search.router, default_response_class=ORJSONDefault)
 router.include_router(server.router, default_response_class=ORJSONDefault)
 router.include_router(user.router, default_response_class=ORJSONDefault)
 app.include_router(router)
