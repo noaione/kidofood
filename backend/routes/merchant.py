@@ -25,18 +25,22 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
+from typing import Literal, Optional
 
+from bson import ObjectId
+from bson.errors import InvalidId
 from fastapi import APIRouter, Depends
 
 from internals.db import FoodItem, Merchant, UserType
 from internals.models import FoodItemResponse, MerchantResponse
-from internals.responses import ResponseType
+from internals.responses import ResponseType, PaginatedResponseType, PaginationInfo
 from internals.session import UserSession, check_session_cookie, get_session_verifier
 from internals.utils import to_uuid
 
 __all__ = ("router",)
 router = APIRouter(prefix="/merchant", tags=["Merchant"])
 logger = logging.getLogger("Routes.Merchant")
+SortDirection = Literal["asc", "ascending", "desc", "descending"]
 
 
 @router.get(
@@ -117,16 +121,58 @@ async def merchant_get_single(id: str):
     summary="Get merchant items by ID",
     response_model=ResponseType[list[FoodItemResponse]],
 )
-async def merchant_get_items(id: str):
+async def merchant_get_items(
+    id: str,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+    sort: SortDirection = "asc",
+):
     """
     Returns a merchant's items by ID.
     """
 
+    act_limit = limit + 1
+    direction = "-" if sort.lower().startswith("desc") else "+"
+    cursor_id = None
+    if cursor is not None:
+        try:
+            cursor_id = ObjectId(cursor)
+        except (TypeError, InvalidId):
+            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
+
     merchant = await Merchant.find_one(Merchant.merchant_id == to_uuid(id))
     if merchant is None:
-        return ResponseType[list[FoodItemResponse]](error="Merchant not found", code=404).to_orjson(404)
+        return PaginatedResponseType[FoodItemResponse](error="Merchant not found", code=404).to_orjson(404)
 
-    items_associated = await FoodItem.find(FoodItem.merchant.ref.id == merchant.id).to_list()
+    items_args = [FoodItem.merchant.ref.id == merchant.id]
+    if cursor_id is not None:
+        items_args.append(FoodItem.id >= cursor_id)
+
+    items_associated = await FoodItem.find(*items_args).sort(f"{direction}_id").limit(act_limit).to_list()
+    if len(items_associated) < 1:
+        return PaginatedResponseType[FoodItemResponse](
+            data=[],
+            code=404,
+            page_info=PaginationInfo(
+                total=0,
+                count=0,
+                cursor=None,
+                per_page=limit,
+            ),
+        ).to_orjson(404)
+    items_associated_count = await FoodItem.find(FoodItem.merchant.ref.id == merchant.id).count()
+
+    last_item = None
+    if len(items_associated) > limit:
+        last_item = items_associated.pop()
     mapped_items = list(map(FoodItemResponse.from_db, items_associated))
 
-    return ResponseType[list[FoodItemResponse]](data=mapped_items).to_orjson()
+    return PaginatedResponseType[FoodItemResponse](
+        data=mapped_items,
+        page_info=PaginationInfo(
+            total=items_associated_count,
+            count=len(mapped_items),
+            cursor=str(last_item.id) if last_item is not None else None,
+            per_page=limit,
+        ),
+    ).to_orjson()
