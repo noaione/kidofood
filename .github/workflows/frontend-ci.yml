@@ -43,5 +43,4 @@ jobs:
       - name: Lint Frontend
         run: |
           cd frontend
-          pnpx next lint
-          pnpx tsc --pretty --noEmit
+          pnpm lint
