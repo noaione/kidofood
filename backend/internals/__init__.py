@@ -8,6 +8,7 @@ A ton of internal modules for KidoFood backend.
 """
 
 from . import db, models
+from .discover import *
 from .redbridge import *
 from .responses import *
 from .session import *

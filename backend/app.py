@@ -5,12 +5,12 @@ from fastapi.datastructures import Default
 from fastapi.responses import RedirectResponse
 
 from internals.db import KFDatabase
+from internals.discover import discover_routes
 from internals.responses import ORJSONXResponse
 from internals.session import create_session, get_session_backend
 from internals.storage import create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean
-from routes import images, merchant, search, server, user
 
 ROOT_DIR = Path(__file__).absolute().parent
 env_config = get_env_config()
@@ -102,11 +102,9 @@ async def on_app_shutdown():
 
 
 ORJSONDefault = Default(ORJSONXResponse)
-router.include_router(images.router)
-router.include_router(merchant.router, default_response_class=ORJSONDefault)
-router.include_router(search.router, default_response_class=ORJSONDefault)
-router.include_router(server.router, default_response_class=ORJSONDefault)
-router.include_router(user.router, default_response_class=ORJSONDefault)
+# Auto add routes using discovery
+discover_routes(router, ROOT_DIR / "routes", recursive=True, default_response_class=ORJSONDefault)
+
 app.include_router(router)
 
 
