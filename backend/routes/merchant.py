@@ -34,7 +34,7 @@ from fastapi import APIRouter, Depends
 from internals.db import FoodItem, Merchant, UserType
 from internals.models import FoodItemResponse, MerchantResponse, PartialID
 from internals.responses import PaginatedResponseType, PaginationInfo, ResponseType
-from internals.session import UserSession, check_session_cookie, get_session_verifier
+from internals.session import UserSession, check_session
 from internals.utils import to_uuid
 
 __all__ = ("router",)
@@ -47,9 +47,8 @@ SortDirection = Literal["asc", "ascending", "desc", "descending"]
     "/",
     summary="Get all merchants (Admin)",
     response_model=ResponseType[list[MerchantResponse]],
-    dependencies=[Depends(check_session_cookie)],
 )
-async def merchants_get(session: UserSession = Depends(get_session_verifier)):
+async def merchants_get(session: UserSession = Depends(check_session)):
     """
     Returns all merchants registered with KidoFood.
     """
@@ -70,7 +69,7 @@ async def merchants_get(session: UserSession = Depends(get_session_verifier)):
     summary="Get (your) merchant information",
     response_model=ResponseType[MerchantResponse],
 )
-async def merchant_get(session: UserSession = Depends(get_session_verifier)):
+async def merchant_get(session: UserSession = Depends(check_session)):
     """
     Returns merchant information of the user.
     """

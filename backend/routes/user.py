@@ -25,7 +25,6 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from uuid import UUID
 
 from beanie.operators import Eq
 from fastapi import APIRouter, Depends
@@ -36,11 +35,9 @@ from internals.responses import ResponseType
 from internals.session import (
     PartialUserSession,
     UserSession,
-    check_session_cookie,
+    check_session,
     encrypt_password,
-    get_session_backend,
-    get_session_cookie,
-    get_session_verifier,
+    get_session_handler,
     verify_password,
 )
 
@@ -53,9 +50,8 @@ logger = logging.getLogger("Routes.User")
     "/me",
     summary="Get current user",
     response_model=ResponseType[PartialUserSession],
-    dependencies=[Depends(check_session_cookie)],
 )
-async def auth_me(session: UserSession = Depends(get_session_verifier)):
+async def auth_me(session: UserSession = Depends(check_session)):
     """
     This route will return the current user information from the cookie
     information.
@@ -90,23 +86,21 @@ async def auth_enter(user: PartialLogin):
     logger.info(f"User {user.email} authenticated, setting session")
     session = UserSession.from_db(get_user, user.remember)
     json_resp = ResponseType[PartialUserSession](data=session.to_partial()).to_orjson()
-    backend = get_session_backend()
-    await backend.create(session.session_id, session)
-    get_session_cookie().attach_to_response(json_resp, session.session_id)
+    handler = get_session_handler()
+    await handler.set_session(session, json_resp)
 
     return json_resp
 
 
 @router.post("/leave", summary="Logout from KidoFood", response_model=ResponseType)
-async def auth_leave(session_id: UUID = Depends(check_session_cookie)):
+async def auth_leave(session: UserSession = Depends(check_session)):
     """
     This route will remove your current session.
     """
 
-    backend = get_session_backend()
-    await backend.delete(session_id=session_id)
+    handler = get_session_handler()
     default_resp = ResponseType().to_orjson()
-    get_session_cookie().delete_from_response(default_resp)
+    await handler.remove_session(session.session_id, default_resp)
 
     return default_resp
 

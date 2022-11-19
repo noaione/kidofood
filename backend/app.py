@@ -26,14 +26,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.datastructures import Default
 from fastapi.responses import RedirectResponse
 
 from internals.db import KFDatabase
 from internals.discover import discover_routes
-from internals.responses import ORJSONXResponse
-from internals.session import create_session, get_session_backend
+from internals.responses import ORJSONXResponse, ResponseType
+from internals.session import SessionError, create_session_handler, get_session_handler
 from internals.storage import create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean
@@ -106,7 +106,7 @@ async def on_app_startup():
     if REDIS_HOST is None:
         raise Exception("No Redis connection information provided!")
     SESSION_MAX_AGE = int(env_config.get("SESSION_MAX_AGE") or 7 * 24 * 60 * 60)
-    create_session(SECRET_KEY, REDIS_HOST, REDIS_PORT, REDIS_PASS, SESSION_MAX_AGE)
+    create_session_handler(SECRET_KEY, REDIS_HOST, REDIS_PORT, REDIS_PASS, SESSION_MAX_AGE)
     logger.info("Session created!")
 
 
@@ -120,11 +120,19 @@ async def on_app_shutdown():
 
     try:
         logger.info("Closing redis session backend...")
-        db_backend = get_session_backend()
-        await db_backend.shutdown()
+        session_handler = get_session_handler()
+        await session_handler.backend.shutdown()
         logger.info("Closed redis session backend!")
     except Exception:
         pass
+
+
+@app.exception_handler(SessionError)
+async def session_exception_handler(_: Request, exc: SessionError):
+    status_code = exc.status_code
+    if status_code < 400:
+        status_code = 403
+    return ResponseType(error=exc.detail, status_code=status_code).to_orjson(status_code)
 
 
 ORJSONDefault = Default(ORJSONXResponse)
