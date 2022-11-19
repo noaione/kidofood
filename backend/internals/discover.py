@@ -27,7 +27,7 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from importlib import util
+from importlib import import_module, util
 from pathlib import Path
 from typing import Any, Dict, Union
 
@@ -41,12 +41,18 @@ logger = logging.getLogger("Internals.Discovery")
 def discover_routes(
     app_or_router: Union[APIRouter, FastAPI], route_path: Path, recursive: bool = False, **router_kwargs: Dict[str, Any]
 ):
+    mod = app_or_router.__module__
+    _imported = set()
     routes_iter = route_path.glob("*.py") if not recursive else route_path.rglob("*.py")
     for route in routes_iter:
         if route.name == "__init__.py":
             continue
+        route_dot = "routes." + route.relative_to(route_path).with_suffix("").as_posix().replace("/", ".")
+        if route_dot not in _imported:
+            module = import_module(route_dot, mod)
+            _imported.add(route_dot)
         logger.info(f"Loading route: {route.stem}")
-        spec = util.spec_from_file_location(route.name, route)
+        spec = util.spec_from_file_location(route_dot, route)
         if spec is None:
             logger.warning(f"Failed to load route {route.name}")
             continue
