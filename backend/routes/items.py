@@ -43,9 +43,9 @@ SortDirection = Literal["asc", "ascending", "desc", "descending"]
 
 
 @router.get(
-    "/items",
+    "/",
     summary="Get all items (paginated)",
-    response_model=ResponseType[list[FoodItemResponse]],
+    response_model=PaginatedResponseType[FoodItemResponse],
 )
 async def get_all_items(
     limit: int = 20,
@@ -102,7 +102,7 @@ async def get_all_items(
 
 
 @router.get(
-    "/items/{item_id}",
+    "/{item_id}",
     summary="Get item by ID",
     response_model=ResponseType[FoodItemResponse],
 )

@@ -33,7 +33,7 @@ from fastapi.responses import Response, StreamingResponse
 from internals.storage import get_s3_or_local
 
 __all__ = ("router",)
-router = APIRouter(prefix="/images", tags=["Images"])
+router = APIRouter(prefix="/images", tags=["Storages"])
 logger = logging.getLogger("Routes.Images")
 
 ImageType = Literal["merchant", "items", "users"]

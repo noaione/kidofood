@@ -38,13 +38,13 @@ from internals.session import UserSession, check_session_cookie, get_session_ver
 from internals.utils import to_uuid
 
 __all__ = ("router",)
-router = APIRouter(prefix="/merchant", tags=["Merchant"])
+router = APIRouter(prefix="/merchants", tags=["Merchant"])
 logger = logging.getLogger("Routes.Merchant")
 SortDirection = Literal["asc", "ascending", "desc", "descending"]
 
 
 @router.get(
-    "/merchants",
+    "/",
     summary="Get all merchants (Admin)",
     response_model=ResponseType[list[MerchantResponse]],
     dependencies=[Depends(check_session_cookie)],
@@ -66,7 +66,7 @@ async def merchants_get(session: UserSession = Depends(get_session_verifier)):
 
 
 @router.get(
-    "/merchant",
+    "/self",
     summary="Get (your) merchant information",
     response_model=ResponseType[MerchantResponse],
 )
@@ -100,7 +100,7 @@ async def merchant_get(session: UserSession = Depends(get_session_verifier)):
 
 
 @router.get(
-    "/merchant/{id}",
+    "/{id}",
     summary="Get merchant by ID",
     response_model=ResponseType[MerchantResponse],
 )
@@ -117,9 +117,9 @@ async def merchant_get_single(id: str):
 
 
 @router.get(
-    "/merchant/{id}/items",
+    "/{id}/items",
     summary="Get merchant items by ID",
-    response_model=ResponseType[list[FoodItemResponse]],
+    response_model=PaginatedResponseType[FoodItemResponse],
 )
 async def merchant_get_items(
     id: str,
