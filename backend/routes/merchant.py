@@ -27,12 +27,21 @@ from __future__ import annotations
 import logging
 from typing import Literal, Optional
 
+from beanie.operators import NotIn
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends
 
 from internals.db import FoodItem, Merchant, UserType
-from internals.models import FoodItemResponse, MerchantResponse, PartialID
+from internals.db.models import FoodOrder, OrderStatus
+from internals.models import (
+    AvatarResponse,
+    AvatarType,
+    FoodItemResponse,
+    FoodOrderResponse,
+    MerchantResponse,
+    PartialIDAvatar,
+)
 from internals.responses import PaginatedResponseType, PaginationInfo, ResponseType
 from internals.session import UserSession, check_session
 from internals.utils import to_uuid
@@ -59,7 +68,7 @@ async def merchants_get(session: UserSession = Depends(check_session)):
         ).to_orjson(403)
 
     merchants = await Merchant.find_all().to_list()
-    mapped_merchants = list(map(MerchantResponse.from_db, merchants))
+    mapped_merchants = [MerchantResponse.from_db(merch) for merch in merchants]
 
     return ResponseType[list[MerchantResponse]](data=mapped_merchants).to_orjson()
 
@@ -164,9 +173,107 @@ async def merchant_get_items(
     last_item = None
     if len(items_associated) > limit:
         last_item = items_associated.pop()
-    mapped_items = list(map(FoodItemResponse.from_db, items_associated, PartialID(merchant.merchant_id, merchant.name)))
+    mapped_items = [
+        FoodItemResponse.from_db(
+            item,
+            merchant_info=PartialIDAvatar(
+                id=merchant.merchant_id,
+                name=merchant.name,
+                avatar=AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT),
+            ),
+        )
+        for item in items_associated
+    ]
 
     return PaginatedResponseType[FoodItemResponse](
+        data=mapped_items,
+        page_info=PaginationInfo(
+            total=items_associated_count,
+            count=len(mapped_items),
+            cursor=str(last_item.id) if last_item is not None else None,
+            per_page=limit,
+        ),
+    ).to_orjson()
+
+
+@router.get(
+    "/{id}/orders",
+    summary="Get speciifc merchant ongoing/all orders",
+    response_model=PaginatedResponseType[FoodOrderResponse],
+)
+async def merchant_get_orders(
+    id: str,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+    sort: SortDirection = "asc",
+    include_all: bool = False,
+):
+    """
+    Returns a merchant's ID current orders.
+
+    You can also include all orders by setting the `include_all` parameter to `true`.
+    If not, it will not include any finished order/problematic order.
+    """
+
+    act_limit = limit + 1
+    direction = "-" if sort.lower().startswith("desc") else "+"
+    cursor_id = None
+    if cursor is not None:
+        try:
+            cursor_id = ObjectId(cursor)
+        except (TypeError, InvalidId):
+            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
+
+    merchant = await Merchant.find_one(Merchant.merchant_id == to_uuid(id))
+    if merchant is None:
+        return PaginatedResponseType[FoodOrderResponse](error="Merchant not found", code=404).to_orjson(404)
+
+    items_args = [FoodOrder.merchant.ref.id == merchant.id]
+    not_in_args = NotIn(
+        FoodOrder.status,
+        [
+            OrderStatus.CANCELED_MERCHANT,
+            OrderStatus.CANCELLED,
+            OrderStatus.PROBLEM_MERCHANT,
+            OrderStatus.PROBLEM_FAIL_TO_DELIVER,
+            OrderStatus.DONE,
+        ],
+    )
+    if not include_all:
+        items_args.append(not_in_args)
+    if cursor_id is not None:
+        items_args.append(FoodOrder.id >= cursor_id)
+
+    items_associated = (
+        await FoodOrder.find(*items_args, fetch_links=True).sort(f"{direction}_id").limit(act_limit).to_list()
+    )
+    if len(items_associated) < 1:
+        return PaginatedResponseType[FoodOrderResponse](
+            data=[],
+            code=404,
+            page_info=PaginationInfo(
+                total=0,
+                count=0,
+                cursor=None,
+                per_page=limit,
+            ),
+        ).to_orjson(404)
+    items_associated_count = await FoodOrder.find(*items_args[:-1]).count()
+
+    last_item = None
+    if len(items_associated) > limit:
+        last_item = items_associated.pop()
+    mapped_items = [
+        FoodOrderResponse.from_db(
+            item,
+            merchant_info=PartialIDAvatar(
+                merchant.merchant_id, merchant.name, AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT)
+            ),
+        )
+        for item in items_associated
+    ]
+
+    return PaginatedResponseType[FoodOrderResponse](
         data=mapped_items,
         page_info=PaginationInfo(
             total=items_associated_count,
