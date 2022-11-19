@@ -32,11 +32,20 @@ import pendulum
 from internals.db import AvatarImage
 
 __all__ = (
+    "pendulum_utc",
+    "AvatarType",
     "AvatarResponse",
     "PartialID",
-    "pendulum_utc",
+    "PartialIDName",
+    "PartialIDAvatar",
 )
 pendulum_utc = ftpartial(pendulum.now, tz="UTC")
+
+
+class AvatarType:
+    USERS = "user"
+    MERCHANT = "merchant"
+    ITEMS = "items"
 
 
 @dataclass
@@ -55,4 +64,13 @@ class AvatarResponse:
 @dataclass
 class PartialID:
     id: str
+
+
+@dataclass
+class PartialIDName(PartialID):
     name: str
+
+
+@dataclass
+class PartialIDAvatar(PartialIDName):
+    avatar: AvatarResponse

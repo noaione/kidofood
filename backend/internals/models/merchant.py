@@ -32,13 +32,13 @@ import pendulum
 
 from internals.db import Merchant as MerchantDB
 
-from .common import AvatarResponse, PartialID, pendulum_utc
+from .common import AvatarResponse, AvatarType, PartialIDName, pendulum_utc
 
 __all__ = ("MerchantResponse",)
 
 
 @dataclass
-class MerchantResponse(PartialID):
+class MerchantResponse(PartialIDName):
     description: str
     address: str
 
@@ -69,7 +69,7 @@ class MerchantResponse(PartialID):
     def from_db(cls, merchant: MerchantDB):
         avatar = None
         if merchant.avatar and merchant.avatar.key:
-            avatar = AvatarResponse.from_db(merchant.avatar, "merchant")
+            avatar = AvatarResponse.from_db(merchant.avatar, AvatarType.ITEMS)
         return cls(
             id=str(merchant.merchant_id),
             name=merchant.name,

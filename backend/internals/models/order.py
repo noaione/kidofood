@@ -26,29 +26,36 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Type
 
 import pendulum
 
 from internals.db import FoodItem as FoodItemDB
-from internals.db import ItemType
+from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
+from internals.db import OrderStatus
+from internals.db import User as UserDB
 
-from .common import AvatarResponse, AvatarType, PartialIDAvatar, PartialIDName, pendulum_utc
+from .common import AvatarResponse, AvatarType, PartialID, PartialIDAvatar, pendulum_utc
+from .items import FoodItemResponse
 
-__all__ = ("FoodItemResponse",)
+__all__ = ("FoodOrderResponse",)
 
 
 @dataclass
-class FoodItemResponse(PartialIDName):
-    description: str
-    price: float
-    stock: int
-    type: ItemType
+class FoodOrderResponse(PartialID):
+    items: list[FoodItemResponse]
+    total: float
+
+    # user/merchant
+    user: PartialIDAvatar
     merchant: PartialIDAvatar
+
+    target_address: str
     created_at: pendulum.DateTime = field(default_factory=pendulum_utc)
     updated_at: pendulum.DateTime = field(default_factory=pendulum_utc)
-    image: Optional[AvatarResponse] = None
+
+    status: OrderStatus = OrderStatus.PENDING
 
     def __post_init__(self):
         if isinstance(self.created_at, str):
@@ -66,30 +73,44 @@ class FoodItemResponse(PartialIDName):
 
     @classmethod
     def from_db(
-        cls,
-        db: FoodItemDB,
+        cls: Type[FoodOrderResponse],
+        db: FoodOrderDB,
+        user_info: Optional[PartialIDAvatar] = None,
         merchant_info: Optional[PartialIDAvatar] = None,
-    ) -> FoodItemResponse:
-        avatar = None
-        if db.avatar and db.avatar.key:
-            avatar = AvatarResponse.from_db(db.avatar, AvatarType.ITEMS)
+    ) -> FoodOrderResponse:
         merchant = db.merchant if isinstance(db.merchant, MerchantDB) else merchant_info
         if merchant is None:
             raise ValueError("Merchant info is required, either passing the prefetched DB or passing the merchant info")
+        user = db.user if isinstance(db.user, UserDB) else user_info
+        if user is None:
+            raise ValueError("User info is required, either passing the prefetched DB or passing the user info")
+        prefetched_items: list[FoodItemResponse] = []
+        for idx, item in enumerate(db.items):
+            if not isinstance(item, FoodItemDB):
+                raise TypeError(
+                    f"items[{idx}] is not a FoodItem, got {type(item)} instead, make sure to prefetch the Link!"
+                )
+            prefetched_items.append(FoodItemResponse.from_db(item, merchant_info))
         if isinstance(merchant, MerchantDB):
             merchant = PartialIDAvatar(
                 merchant.merchant_id,
                 merchant.name,
                 AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT),
             )
+        if isinstance(user, UserDB):
+            user = PartialIDAvatar(
+                user.user_id,
+                user.name,
+                AvatarResponse.from_db(user.avatar, AvatarType.USERS),
+            )
         return cls(
-            id=str(db.item_id),
-            name=db.name,
-            description=db.description,
-            price=db.price,
-            availability=db.stock,
-            type=db.type,
-            image=avatar,
+            id=str(db.order_id),
+            items=prefetched_items,
+            total=db.total,
+            user=user,
+            merchant=merchant,
+            target_address=db.target_address,
             created_at=db.created_at,
             updated_at=db.updated_at,
+            status=db.status,
         )

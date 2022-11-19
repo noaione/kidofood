@@ -33,7 +33,7 @@ from pydantic import BaseModel
 
 from internals.db import AvatarImage
 
-from .common import AvatarResponse, PartialID
+from .common import AvatarResponse, AvatarType, PartialIDAvatar, PartialIDName
 
 __all__ = (
     "MerchantSearch",
@@ -43,10 +43,7 @@ __all__ = (
     "MultiSearchResponse",
 )
 
-
-@dataclass
-class MerchantSearch(PartialID):
-    avatar: AvatarResponse
+MerchantSearch = PartialIDAvatar  # backward compatibility
 
 
 class ProjectionMerchant(BaseModel):
@@ -55,11 +52,11 @@ class ProjectionMerchant(BaseModel):
     name: str
     avatar: AvatarImage
 
-    def to_response(self) -> MerchantSearch:
-        return MerchantSearch(
+    def to_response(self) -> PartialIDAvatar:
+        return PartialIDAvatar(
             id=str(self.merchant_id),
             name=self.name,
-            avatar=AvatarResponse.from_db(self.avatar, "merchant"),
+            avatar=AvatarResponse.from_db(self.avatar, AvatarType.MERCHANT),
         )
 
     class Config:
@@ -67,7 +64,7 @@ class ProjectionMerchant(BaseModel):
 
 
 @dataclass
-class FoodItemSearch(PartialID):
+class FoodItemSearch(PartialIDName):
     description: str
     price: float
     avatar: AvatarResponse
@@ -87,7 +84,7 @@ class ProjectionFoodItem(BaseModel):
             name=self.name,
             description=self.description,
             price=self.price,
-            avatar=AvatarResponse.from_db(self.avatar, "items"),
+            avatar=AvatarResponse.from_db(self.avatar, AvatarType.ITEMS),
         )
 
     class Config:
@@ -95,5 +92,5 @@ class ProjectionFoodItem(BaseModel):
 
 
 class MultiSearchResponse(TypedDict):
-    merchants: list[MerchantSearch]
+    merchants: list[PartialIDAvatar]
     items: list[FoodItemSearch]
