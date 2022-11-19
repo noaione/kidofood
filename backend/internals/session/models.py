@@ -56,6 +56,7 @@ class PartialUserSession(BaseModel):
 
 
 class UserSession(PartialUserSession):
+    user_db: str  # ObjectId, stringified
     merchant_info: Link[Merchant] = None
     # RememberMe
     remember_me: bool
@@ -77,6 +78,7 @@ class UserSession(PartialUserSession):
             email=user.email,
             name=user.name,
             type=user.type,
+            user_db=str(user.id),
             merchant_info=user.merchant,
             remember_me=remember,
             remember_latch=False,
