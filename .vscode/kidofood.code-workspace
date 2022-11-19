@@ -23,5 +23,14 @@
     "python.languageServer": "Pylance",
     "autoDocstring.docstringFormat": "sphinx",
     "tailwindCSS.emmetCompletions": true
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "mgmcdermott.vscode-language-babel",
+      "bungcip.better-toml",
+      "aaron-bond.better-comments",
+      "visualstudioexptteam.vscodeintellicode"
+    ]
   }
 }

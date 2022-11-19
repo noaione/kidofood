@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "formulahendry.auto-rename-tag",
+        "paulmolluzzo.convert-css-in-js",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "csstools.postcss",
+        "bradlc.vscode-tailwindcss"
+    ]
+}
