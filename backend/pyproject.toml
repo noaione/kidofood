@@ -55,3 +55,12 @@ profile = "black"
 extend_skip = ["_dataset/**", "env/**", "venv/**", "./venv/**", ".pytest_cache/**", ".nox/**"]
 line_length = 110
 skip_gitignore = true
+
+[tool.pyright]
+include = ["internals", "pipelines", "routes", "app.py"]
+exclude = ["venv", "env", "node_modules", ".venv", ".env", ".nox", ".pytest_cache", ".mypy_cache", ".tox", "build", "dist", "_build", "**/__pycache__"]
+ignore = ["_testing"]
+
+reportMissingImports = true
+
+pythonVersion = "3.9"

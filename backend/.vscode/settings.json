@@ -14,7 +14,12 @@
     "python.analysis.diagnosticMode": "workspace",
     "python.linting.enabled": true,
     "python.analysis.typeCheckingMode": "off",
-    "isort.check": true,
+    "python.analysis.autoImportCompletions": true,
+    "isort.check": false,
+    "isort.importStrategy": "useBundled",
+    "isort.args": [
+        "--settings-path=pyproject.toml"
+    ],
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,
