@@ -39,7 +39,7 @@ logger = logging.getLogger("Routes.Images")
 ImageType = Literal["merchant", "items", "users"]
 
 
-@router.get("/{type}/{id}/{key}", summary="Get specific image key")
+@router.get("/{type}/{id}/{key}", summary="Get specific image key", response_class=StreamingResponse)
 async def get_image(type: ImageType, id: str, key: str):
     # Key can include or not include the extension.
 
