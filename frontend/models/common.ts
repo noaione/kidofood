@@ -57,8 +57,21 @@ export enum OrderStatus {
      */
     DONE = 200,
 }
+export type AvatarType = "user" | "merchant" | "items";
 
 export interface AvatarResponse {
     name: string;
-    type: string;
+    type: AvatarType;
+}
+
+export interface PartialID {
+    id: string;
+}
+
+export interface PartialIDName extends PartialID {
+    name: string;
+}
+
+export interface PartialIDAvatar extends PartialIDName {
+    avatar: AvatarResponse;
 }

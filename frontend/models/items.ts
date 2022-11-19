@@ -1,13 +1,12 @@
 import { Nullable } from "@/type";
-import { AvatarResponse, ItemType } from "./common";
+import { AvatarResponse, ItemType, PartialIDAvatar, PartialIDName } from "./common";
 
-export interface FoodItem {
-    id: string;
-    name: string;
+export interface FoodItem extends PartialIDName {
     description: string;
     price: number;
     stock: number;
     type: ItemType;
+    merchant: PartialIDAvatar;
     image: Nullable<AvatarResponse>;
 
     // Timestamps (ISO 8601)

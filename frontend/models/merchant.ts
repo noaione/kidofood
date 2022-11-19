@@ -1,14 +1,11 @@
 import { Nullable, ResponseType } from "@/type";
-import { AvatarResponse } from "./common";
+import { PartialIDAvatar } from "./common";
 
-export interface Merchant {
-    id: string;
-    name: string;
+export interface Merchant extends PartialIDAvatar {
     description: string;
     address: string;
 
     // Optional stuff
-    avatar: Nullable<AvatarResponse>;
     phone: Nullable<string>;
     email: Nullable<string>;
     website: Nullable<string>;
