@@ -26,14 +26,14 @@ from __future__ import annotations
 
 import logging
 from functools import partial as ftpartial
-from typing import Literal, Optional
 
 from beanie.operators import RegEx
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from internals.db import FoodItem, Merchant
+from internals.depends import DualPaginationParams, PaginationParams, SortDirection, pagination_parameters
 from internals.models import (
     FoodItemSearch,
     MerchantSearch,
@@ -46,7 +46,6 @@ from internals.responses import PaginatedMultiResponseType, PaginatedResponseTyp
 __all__ = ("router",)
 router = APIRouter(prefix="/search", tags=["Search"])
 logger = logging.getLogger("Routes.Search")
-SortDirection = Literal["asc", "ascending", "desc", "descending"]
 
 
 @router.get(
@@ -54,18 +53,22 @@ SortDirection = Literal["asc", "ascending", "desc", "descending"]
 )
 async def search_get(
     query: str,
-    limit: int = 10,
-    cursor_a: Optional[str] = None,
-    cursor_b: Optional[str] = None,
-    sort: SortDirection = "asc",
+    page_params: DualPaginationParams = Depends(
+        pagination_parameters(max_limit=250, default_limit=10, dual_cursor=True)
+    ),
 ):
     """
     Search for merchants and food items.
     """
     SearchRe = ftpartial(RegEx, pattern=query, options="i")
 
+    limit = page_params["limit"]
+    cursor_a = page_params["cursor_a"]
+    cursor_b = page_params["cursor_b"]
+    sort = page_params["sort"]
+
     act_limit = limit + 1
-    direction = "-" if sort.lower().startswith("desc") else "+"
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
     merch_args = [SearchRe(Merchant.name)]
     items_args = [SearchRe(FoodItem.name)]
     if cursor_a is not None:
@@ -148,15 +151,17 @@ async def search_get(
 @router.get("/merchants", summary="Search for merchants", response_model=PaginatedResponseType[MerchantSearch])
 async def search_merchants_get(
     query: str,
-    limit: int = 10,
-    cursor: Optional[str] = None,
-    sort: SortDirection = "asc",
+    page_params: PaginationParams = Depends(pagination_parameters(default_limit=10)),
 ):
     """
     Search for merchants.
     """
+    limit = page_params["limit"]
+    cursor = page_params["cursor"]
+    sort = page_params["sort"]
+
     act_limit = limit + 1
-    direction = "-" if sort.lower().startswith("desc") else "+"
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
     args = [RegEx(Merchant.name, pattern=query, options="i")]
     if cursor is not None:
         try:
@@ -199,15 +204,17 @@ async def search_merchants_get(
 @router.get("/items", summary="Search for items", response_model=PaginatedResponseType[FoodItemSearch])
 async def search_items_get(
     query: str,
-    limit: int = 10,
-    cursor: Optional[str] = None,
-    sort: SortDirection = "asc",
+    page_params: PaginationParams = Depends(pagination_parameters(default_limit=10)),
 ):
     """
     Search for food items.
     """
+    limit = page_params["limit"]
+    cursor = page_params["cursor"]
+    sort = page_params["sort"]
+
     act_limit = limit + 1
-    direction = "-" if sort.lower().startswith("desc") else "+"
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
     args = [RegEx(FoodItem.name, pattern=query, options="i")]
     if cursor is not None:
         try:

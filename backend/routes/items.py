@@ -25,13 +25,13 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from typing import Literal, Optional
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from internals.db import FoodItem
+from internals.depends import PaginationParams, SortDirection, pagination_parameters
 from internals.models import FoodItemResponse
 from internals.responses import PaginatedResponseType, PaginationInfo, ResponseType
 from internals.utils import to_uuid
@@ -39,7 +39,6 @@ from internals.utils import to_uuid
 __all__ = ("router",)
 router = APIRouter(prefix="/items", tags=["Items"])
 logger = logging.getLogger("Routes.Items")
-SortDirection = Literal["asc", "ascending", "desc", "descending"]
 
 
 @router.get(
@@ -48,16 +47,18 @@ SortDirection = Literal["asc", "ascending", "desc", "descending"]
     response_model=PaginatedResponseType[FoodItemResponse],
 )
 async def get_all_items(
-    limit: int = 20,
-    cursor: Optional[str] = None,
-    sort: SortDirection = "asc",
+    page_params: PaginationParams = Depends(pagination_parameters(max_limit=250, default_limit=10)),
 ):
     """
     Get all items available in KidoFood, use pagination.
     """
 
+    limit = page_params["limit"]
+    cursor = page_params["cursor"]
+    sort = page_params["sort"]
+
     act_limit = limit + 1
-    direction = "-" if sort.lower().startswith("desc") else "+"
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
     cursor_id = None
     if cursor is not None:
         try:

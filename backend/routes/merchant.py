@@ -25,15 +25,14 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from typing import Literal, Optional
 
 from beanie.operators import NotIn
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends
 
-from internals.db import FoodItem, Merchant, UserType
-from internals.db.models import FoodOrder, OrderStatus
+from internals.db import FoodItem, FoodOrder, Merchant, OrderStatus, UserType
+from internals.depends import PaginationParams, SortDirection, pagination_parameters
 from internals.models import (
     AvatarResponse,
     AvatarType,
@@ -49,7 +48,6 @@ from internals.utils import to_uuid
 __all__ = ("router",)
 router = APIRouter(prefix="/merchants", tags=["Merchant"])
 logger = logging.getLogger("Routes.Merchant")
-SortDirection = Literal["asc", "ascending", "desc", "descending"]
 
 
 @router.get(
@@ -131,16 +129,18 @@ async def merchant_get_single(id: str):
 )
 async def merchant_get_items(
     id: str,
-    limit: int = 20,
-    cursor: Optional[str] = None,
-    sort: SortDirection = "asc",
+    page_params: PaginationParams = Depends(pagination_parameters(default_limit=10)),
 ):
     """
     Returns a merchant's items by ID.
     """
 
+    limit = page_params["limit"]
+    cursor = page_params["cursor"]
+    sort = page_params["sort"]
+
     act_limit = limit + 1
-    direction = "-" if sort.lower().startswith("desc") else "+"
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
     cursor_id = None
     if cursor is not None:
         try:
@@ -203,9 +203,7 @@ async def merchant_get_items(
 )
 async def merchant_get_orders(
     id: str,
-    limit: int = 20,
-    cursor: Optional[str] = None,
-    sort: SortDirection = "asc",
+    page_params: PaginationParams = Depends(pagination_parameters(default_limit=10)),
     include_all: bool = False,
 ):
     """
@@ -215,8 +213,12 @@ async def merchant_get_orders(
     If not, it will not include any finished order/problematic order.
     """
 
+    limit = page_params["limit"]
+    cursor = page_params["cursor"]
+    sort = page_params["sort"]
+
     act_limit = limit + 1
-    direction = "-" if sort.lower().startswith("desc") else "+"
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
     cursor_id = None
     if cursor is not None:
         try:
