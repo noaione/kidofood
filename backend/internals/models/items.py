@@ -30,22 +30,21 @@ from typing import Optional
 
 import pendulum
 
-from internals.db import FoodItem as FoodItemDB
+from internals.db import FoodItem as FoodItemDB, Merchant as MerchantDB
 from internals.db import ItemType
 
-from .common import AvatarResponse, pendulum_utc
+from .common import AvatarResponse, PartialID, pendulum_utc
 
 __all__ = ("FoodItemResponse",)
 
 
 @dataclass
-class FoodItemResponse:
-    id: str
-    name: str
+class FoodItemResponse(PartialID):
     description: str
     price: float
     stock: int
     type: ItemType
+    merchant: PartialID
     created_at: pendulum.DateTime = field(default_factory=pendulum_utc)
     updated_at: pendulum.DateTime = field(default_factory=pendulum_utc)
     image: Optional[AvatarResponse] = None
@@ -65,10 +64,17 @@ class FoodItemResponse:
             self.updated_at = pendulum.instance(self.updated_at)
 
     @classmethod
-    def from_db(cls, db: FoodItemDB) -> FoodItemResponse:
+    def from_db(
+        cls,
+        db: FoodItemDB,
+        merchant_info: Optional[PartialID] = None,
+    ) -> FoodItemResponse:
         avatar = None
         if db.avatar and db.avatar.key:
             avatar = AvatarResponse.from_db(db.avatar, "items")
+        merchant = db.merchant if isinstance(db.merchant, MerchantDB) else merchant_info
+        if merchant is None:
+            raise ValueError("Merchant info is required, either passing the prefetched DB or passing the merchant info")
         return cls(
             id=str(db.item_id),
             name=db.name,

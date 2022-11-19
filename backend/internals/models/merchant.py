@@ -32,15 +32,13 @@ import pendulum
 
 from internals.db import Merchant as MerchantDB
 
-from .common import AvatarResponse, pendulum_utc
+from .common import AvatarResponse, PartialID, pendulum_utc
 
 __all__ = ("MerchantResponse",)
 
 
 @dataclass
-class MerchantResponse:
-    id: str
-    name: str
+class MerchantResponse(PartialID):
     description: str
     address: str
 

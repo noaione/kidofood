@@ -33,7 +33,7 @@ from pydantic import BaseModel
 
 from internals.db import AvatarImage
 
-from .common import AvatarResponse
+from .common import AvatarResponse, PartialID
 
 __all__ = (
     "MerchantSearch",
@@ -45,9 +45,7 @@ __all__ = (
 
 
 @dataclass
-class MerchantSearch:
-    id: str
-    name: str
+class MerchantSearch(PartialID):
     avatar: AvatarResponse
 
 
@@ -69,9 +67,7 @@ class ProjectionMerchant(BaseModel):
 
 
 @dataclass
-class FoodItemSearch:
-    id: str
-    name: str
+class FoodItemSearch(PartialID):
     description: str
     price: float
     avatar: AvatarResponse
