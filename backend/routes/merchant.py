@@ -32,7 +32,7 @@ from bson.errors import InvalidId
 from fastapi import APIRouter, Depends
 
 from internals.db import FoodItem, Merchant, UserType
-from internals.models import FoodItemResponse, MerchantResponse
+from internals.models import FoodItemResponse, MerchantResponse, PartialID
 from internals.responses import PaginatedResponseType, PaginationInfo, ResponseType
 from internals.session import UserSession, check_session_cookie, get_session_verifier
 from internals.utils import to_uuid
@@ -165,7 +165,7 @@ async def merchant_get_items(
     last_item = None
     if len(items_associated) > limit:
         last_item = items_associated.pop()
-    mapped_items = list(map(FoodItemResponse.from_db, items_associated))
+    mapped_items = list(map(FoodItemResponse.from_db, items_associated, PartialID(merchant.merchant_id, merchant.name)))
 
     return PaginatedResponseType[FoodItemResponse](
         data=mapped_items,
