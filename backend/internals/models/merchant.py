@@ -44,14 +44,14 @@ class MerchantResponse:
     description: str
     address: str
 
-    # Optional stuff
-    avatar: Optional[AvatarResponse] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    website: Optional[str] = None
-
     created_at: pendulum.DateTime = field(default_factory=pendulum_utc)
     updated_at: pendulum.DateTime = field(default_factory=pendulum_utc)
+
+    # Optional stuff
+    avatar: Optional[AvatarResponse] = field(default=None)
+    phone: Optional[str] = field(default=None)
+    email: Optional[str] = field(default=None)
+    website: Optional[str] = field(default=None)
 
     def __post_init__(self):
         if isinstance(self.created_at, str):

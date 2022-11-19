@@ -46,9 +46,9 @@ class FoodItemResponse:
     price: float
     stock: int
     type: ItemType
-    image: Optional[AvatarResponse] = None
     created_at: pendulum.DateTime = field(default_factory=pendulum_utc)
     updated_at: pendulum.DateTime = field(default_factory=pendulum_utc)
+    image: Optional[AvatarResponse] = None
 
     def __post_init__(self):
         if isinstance(self.created_at, str):
