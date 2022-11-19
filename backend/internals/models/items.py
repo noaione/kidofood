@@ -30,8 +30,9 @@ from typing import Optional
 
 import pendulum
 
-from internals.db import FoodItem as FoodItemDB, Merchant as MerchantDB
+from internals.db import FoodItem as FoodItemDB
 from internals.db import ItemType
+from internals.db import Merchant as MerchantDB
 
 from .common import AvatarResponse, PartialID, pendulum_utc
 
