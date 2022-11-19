@@ -2,3 +2,10 @@
 @import "tailwindcss/components";
 
 @import "tailwindcss/utilities";
+
+.glow-text {
+    text-shadow: 0 0 4px #696969,0 0 8px hsla(0, 0%, 83.5%, 0.3);
+}
+.dark .glow-text {
+    text-shadow: 0 0 4px #fff,0 0 8px hsla(0,0%,100%,.3)
+}

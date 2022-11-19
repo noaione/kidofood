@@ -14,7 +14,12 @@ import { RootState } from "%/index";
 import { useDarkMode } from "@/hooks";
 import { isNone } from "@/utils";
 
-export default function NavHeader() {
+interface NavHeaderProps {
+    withSearch?: boolean;
+}
+
+export default function NavHeader(props: NavHeaderProps) {
+    const { withSearch = true } = props;
     const userState = useSelector((state: RootState) => state.user);
     const [isDark, setIsDark] = useDarkMode();
 
@@ -32,17 +37,19 @@ export default function NavHeader() {
                     </h1>
                 </div>
             </div>
-            <div className="flex flex-row mx-4 my-4 gap-4 items-center justify-between w-full">
-                <div className="hidden md:flex flex-row gap-2 items-center w-full">
-                    {/* Icon */}
-                    <div className="w-[1.1rem] h-[1.1rem] absolute ml-3 translate-y-[0.05rem]">
-                        <SearchIcon className="w-full h-full" />
+            <div className="flex flex-row mx-4 my-4 gap-4 items-center justify-end w-full">
+                {withSearch && (
+                    <div className="hidden md:flex flex-row gap-2 items-center w-full">
+                        {/* Icon */}
+                        <div className="w-[1.1rem] h-[1.1rem] absolute ml-3 translate-y-[0.05rem]">
+                            <SearchIcon className="w-full h-full" />
+                        </div>
+                        <input
+                            type="text"
+                            className="w-full py-2 pr-4 pl-10 rounded-md hover:rounded-xl focus:ring-0 focus:rounded-xl transition-all bg-gray-300 dark:bg-gray-800 outline-none focus:outline-2 focus:outline-purple-500"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        className="w-full py-2 pr-4 pl-10 rounded-md hover:rounded-xl focus:ring-0 focus:rounded-xl transition-all bg-gray-300 dark:bg-gray-800 outline-none focus:outline-2 focus:outline-purple-500"
-                    />
-                </div>
+                )}
                 <div className="flex flex-row gap-2 lg:gap-4 items-center">
                     <button
                         className="hover:opacity-80 transition-opacity"

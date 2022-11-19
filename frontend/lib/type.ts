@@ -7,3 +7,7 @@ export interface ResponseType<T> {
     error: string;
     code: number;
 }
+
+export interface DefaultErrorResponse {
+    detail: string;
+}
