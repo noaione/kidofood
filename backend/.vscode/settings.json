@@ -24,5 +24,6 @@
         "**/Thumbs.db": true,
         "**/.venv": true,
         "**/__pycache__": true,
+        "**/node_modules": true,
     }
 }
