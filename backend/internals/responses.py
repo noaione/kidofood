@@ -101,11 +101,67 @@ class PaginationInfo:
     """Next cursor for pagination"""
 
 
-class PaginatedResponseType(ResponseType[DataType]):
+class PaginatedResponseType(GenericModel, Generic[DataType]):
+    error: str = "Success"
+    code: int = 200
     data: list[DataType] = []
     page_info: PaginationInfo
 
+    def to_orjson(self, status: int = 200):
+        return ORJSONXResponse(self.dict(), status_code=status)
 
-class PaginatedMultiResponseType(ResponseType[DataType]):
+    def to_string(self):
+        data = self.dict()
+        return orjson.dumps(data, default=ORJsonEncoder, option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_UUID).decode(
+            "utf-8"
+        )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "data": [],
+                "error": "Success",
+                "code": 200,
+                "page_info": {
+                    "total": 0,
+                    "count": 0,
+                    "per_page": 0,
+                    "next_cursor": None,
+                },
+            }
+        }
+
+
+class PaginatedMultiResponseType(GenericModel, Generic[DataType]):
+    error: str = "Success"
+    code: int = 200
     data: DataType = {}
     page_info: dict[str, PaginationInfo] = {}
+
+    def to_orjson(self, status: int = 200):
+        return ORJSONXResponse(self.dict(), status_code=status)
+
+    def to_string(self):
+        data = self.dict()
+        return orjson.dumps(data, default=ORJsonEncoder, option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_UUID).decode(
+            "utf-8"
+        )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "data": {
+                    "key1": [],
+                },
+                "error": "Success",
+                "code": 200,
+                "page_info": {
+                    "key1": {
+                        "total": 0,
+                        "count": 0,
+                        "per_page": 0,
+                        "next_cursor": None,
+                    },
+                },
+            }
+        }
