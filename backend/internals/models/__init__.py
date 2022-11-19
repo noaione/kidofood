@@ -10,4 +10,5 @@ A collection of models for response/request model.
 from .common import *
 from .items import *
 from .merchant import *
+from .search import *
 from .user import *

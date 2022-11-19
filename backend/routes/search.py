@@ -25,78 +25,28 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from functools import partial as ftpartial
-from typing import Literal, Optional, TypedDict
-from uuid import UUID
+from typing import Literal, Optional
 
 from beanie.operators import RegEx
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter
-from pydantic import BaseModel
 
-from internals.db import AvatarImage, FoodItem, Merchant
-from internals.models import AvatarResponse
+from internals.db import FoodItem, Merchant
+from internals.models import (
+    FoodItemSearch,
+    MerchantSearch,
+    MultiSearchResponse,
+    ProjectionFoodItem,
+    ProjectionMerchant,
+)
 from internals.responses import PaginatedMultiResponseType, PaginatedResponseType, PaginationInfo
 
 __all__ = ("router",)
 router = APIRouter(prefix="/search", tags=["Search"])
 logger = logging.getLogger("Routes.Search")
 SortDirection = Literal["asc", "ascending", "desc", "descending"]
-
-
-@dataclass
-class MerchantSearch:
-    id: str
-    name: str
-    avatar: AvatarResponse
-
-
-class ProjectionMerchant(BaseModel):
-    id: ObjectId
-    merchant_id: UUID
-    name: str
-    avatar: AvatarImage
-
-    def to_response(self) -> MerchantSearch:
-        return MerchantSearch(
-            id=self.merchant_id,
-            name=self.name,
-            avatar=AvatarResponse.from_db(self.avatar, "merchant"),
-        )
-
-
-@dataclass
-class FoodItemSearch:
-    id: str
-    name: str
-    description: str
-    price: float
-    avatar: AvatarResponse
-
-
-class ProjectionFoodItem(BaseModel):
-    id: ObjectId
-    item_id: UUID
-    name: str
-    description: str
-    price: float
-    avatar: AvatarImage
-
-    def to_response(self) -> FoodItemSearch:
-        return FoodItemSearch(
-            id=self.item_id,
-            name=self.name,
-            description=self.description,
-            price=self.price,
-            avatar=AvatarResponse.from_db(self.avatar, "items"),
-        )
-
-
-class MultiSearchResponse(TypedDict):
-    merchants: list[MerchantSearch]
-    items: list[FoodItemSearch]
 
 
 @router.get(
