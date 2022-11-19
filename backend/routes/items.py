@@ -88,7 +88,7 @@ async def get_all_items(
     last_item = None
     if len(items_associated) > limit:
         last_item = items_associated.pop()
-    mapped_items = list(map(FoodItemResponse.from_db, items_associated))
+    mapped_items = [FoodItemResponse.from_db(item) for item in items_associated]
 
     return PaginatedResponseType[FoodItemResponse](
         data=mapped_items,
