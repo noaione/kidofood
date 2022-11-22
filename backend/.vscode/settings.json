@@ -13,7 +13,7 @@
     ],
     "python.analysis.diagnosticMode": "workspace",
     "python.linting.enabled": true,
-    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
     "isort.check": false,
     "isort.importStrategy": "useBundled",
