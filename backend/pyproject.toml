@@ -63,5 +63,6 @@ exclude = ["venv", "env", "node_modules", ".venv", ".env", ".nox", ".pytest_cach
 ignore = ["_testing"]
 
 reportMissingImports = true
+venv = "."
 
 pythonVersion = "3.9"
