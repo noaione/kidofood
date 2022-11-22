@@ -96,7 +96,7 @@ async def merchant_get(session: UserSession = Depends(check_session)):
             error="You don't have any merchant account associated", code=404, data=None
         ).to_orjson(404)
 
-    merchant_info = await session.merchant_info.fetch()
+    merchant_info = await Merchant.find_one({"_id": ObjectId(session.merchant_info)})
     if not isinstance(merchant_info, Merchant):
         return ResponseType[MerchantResponse](error="Merchant information is not valid", code=404, data=None).to_orjson(
             404

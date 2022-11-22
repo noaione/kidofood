@@ -27,10 +27,9 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID
 
-from beanie import Link
 from pydantic import BaseModel
 
-from internals.db.models import Merchant, User, UserType
+from internals.db.models import User, UserType
 from internals.utils import make_uuid
 
 __all__ = (
@@ -45,20 +44,25 @@ class PartialUserSession(BaseModel):
     email: str
     name: str
     type: UserType
+    avatar: Optional[str]
 
     @classmethod
     def from_db(cls, user: User):
+        avatar = None
+        if user.avatar and user.avatar.key:
+            avatar = f"{user.avatar.key}.{user.avatar.format}"
         return cls(
             user_id=str(user.user_id),
             email=user.email,
             name=user.name,
             type=user.type,
+            avatar=avatar,
         )
 
 
 class UserSession(PartialUserSession):
     user_db: str  # ObjectId, stringified
-    merchant_info: Optional[Link[Merchant]] = None
+    merchant_info: Optional[str] = None
     # RememberMe
     remember_me: bool
     remember_latch: bool
@@ -70,17 +74,25 @@ class UserSession(PartialUserSession):
             email=self.email,
             name=self.name,
             type=self.type,
+            avatar=self.avatar,
         )
 
     @classmethod
     def from_db(cls, user: User, remember: bool = False):
+        merchant_id: Optional[str] = None
+        if user.merchant is not None:
+            merchant_id = str(user.merchant.ref.id)
+        avatar = None
+        if user.avatar and user.avatar.key:
+            avatar = f"{user.avatar.key}.{user.avatar.format}"
         return cls(
             user_id=str(user.user_id),
             email=user.email,
             name=user.name,
             type=user.type,
+            avatar=avatar,
             user_db=str(user.id),
-            merchant_info=user.merchant,
+            merchant_info=merchant_id,
             remember_me=remember,
             remember_latch=False,
             session_id=make_uuid(False),
