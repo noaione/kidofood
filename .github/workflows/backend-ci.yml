@@ -42,3 +42,7 @@ jobs:
 
       - name: Type check
         uses: jakebailey/pyright-action@v1
+        with:
+          working-directory: backend
+          venv-path: backend/.venv
+          project: backend/pyproject.toml
