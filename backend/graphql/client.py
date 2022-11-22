@@ -52,3 +52,13 @@ class Query:
         sort: SortDirection = SortDirection.ASC,
     ) -> Connection[Merchant]:
         return await resolve_merchant_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
+
+
+@gql.type
+class Mutation:
+    pass
+
+
+@gql.type
+class Subscription:
+    pass
