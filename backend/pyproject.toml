@@ -20,6 +20,7 @@ argon2-cffi = "^21.3.0"
 minio = "^7.1.12"
 aiopath = "0.5.12"
 itsdangerous = "^2.1.2"
+strawberry-graphql = {extras = ["fastapi"], version = "^0.142.2"}
 
 [tool.poetry.dev-dependencies]
 flake8 = "^5.0.4"
