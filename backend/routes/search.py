@@ -76,13 +76,13 @@ async def search_get(
             cursor_id_a = ObjectId(cursor_a)
         except (TypeError, InvalidId):
             return PaginatedMultiResponseType(error="Invalid cursor_a", code=400).to_orjson(400)
-        merch_args.append(Merchant.id >= cursor_id_a)
+        merch_args.append(Merchant.id >= cursor_id_a)  # type: ignore
     if cursor_b is not None:
         try:
             cursor_id_b = ObjectId(cursor_b)
         except (TypeError, InvalidId):
             return PaginatedMultiResponseType(error="Invalid cursor_b", code=400).to_orjson(400)
-        items_args.append(FoodItem.id >= cursor_id_b)
+        items_args.append(FoodItem.id >= cursor_id_b)  # type: ignore
 
     merchants = (
         await Merchant.find(*merch_args).sort(f"{direction}_id").limit(act_limit).project(ProjectionMerchant).to_list()
@@ -98,13 +98,13 @@ async def search_get(
                 "merchants": PaginationInfo(
                     total=0,
                     count=0,
-                    cursor=None,
+                    next_cursor=None,
                     per_page=limit,
                 ),
                 "items": PaginationInfo(
                     total=0,
                     count=0,
-                    cursor=None,
+                    next_cursor=None,
                     per_page=limit,
                 ),
             },
@@ -135,13 +135,13 @@ async def search_get(
             "merchants": PaginationInfo(
                 total=merchant_count,
                 count=int(len(coerced_merchant)),
-                cursor=str(last_item_merchant.id) if last_item_merchant is not None else None,
+                next_cursor=str(last_item_merchant.id) if last_item_merchant is not None else None,
                 per_page=limit,
             ),
             "items": PaginationInfo(
                 total=food_items_count,
                 count=int(len(coerced_items)),
-                cursor=str(last_item_item.id) if last_item_item is not None else None,
+                next_cursor=str(last_item_item.id) if last_item_item is not None else None,
                 per_page=limit,
             ),
         },
@@ -167,8 +167,10 @@ async def search_merchants_get(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
-        args.append(Merchant.id >= cursor_id)
+            return PaginatedResponseType(error="Invalid cursor", code=400, page_info=PaginationInfo(0, 0, 0)).to_orjson(
+                400
+            )
+        args.append(Merchant.id >= cursor_id)  # type: ignore
 
     merchants = (
         await Merchant.find(*args).sort(f"{direction}_id").limit(act_limit).project(ProjectionMerchant).to_list()
@@ -180,7 +182,7 @@ async def search_merchants_get(
             page_info=PaginationInfo(
                 total=0,
                 count=0,
-                cursor=None,
+                next_cursor=None,
                 per_page=limit,
             ),
         ).to_orjson(404)
@@ -195,7 +197,7 @@ async def search_merchants_get(
         page_info=PaginationInfo(
             total=merchant_count,
             count=int(len(merchants)),
-            cursor=str(last_item.id) if last_item is not None else None,
+            next_cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()
@@ -220,8 +222,10 @@ async def search_items_get(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
-        args.append(FoodItem.id >= cursor_id)
+            return PaginatedResponseType(error="Invalid cursor", code=400, page_info=PaginationInfo(0, 0, 0)).to_orjson(
+                400
+            )
+        args.append(FoodItem.id >= cursor_id)  # type: ignore
 
     food_items = (
         await FoodItem.find(*args).sort(f"{direction}_id").limit(act_limit).project(ProjectionFoodItem).to_list()
@@ -233,7 +237,7 @@ async def search_items_get(
             page_info=PaginationInfo(
                 total=0,
                 count=0,
-                cursor=None,
+                next_cursor=None,
                 per_page=limit,
             ),
         ).to_orjson(404)
@@ -248,7 +252,7 @@ async def search_items_get(
         page_info=PaginationInfo(
             total=food_items_count,
             count=int(len(food_items)),
-            cursor=str(last_item.id) if last_item is not None else None,
+            next_cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()

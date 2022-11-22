@@ -146,11 +146,15 @@ async def merchant_get_items(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
+            return PaginatedResponseType(error="Invalid cursor", code=400, page_info=PaginationInfo(0, 0, 0)).to_orjson(
+                400
+            )
 
     merchant = await Merchant.find_one(Merchant.merchant_id == to_uuid(id))
     if merchant is None:
-        return PaginatedResponseType[FoodItemResponse](error="Merchant not found", code=404).to_orjson(404)
+        return PaginatedResponseType[FoodItemResponse](
+            error="Merchant not found", code=404, page_info=PaginationInfo(0, 0, 0)
+        ).to_orjson(404)
 
     items_args = [FoodItem.merchant.ref.id == merchant.id]
     if cursor_id is not None:
@@ -164,7 +168,7 @@ async def merchant_get_items(
             page_info=PaginationInfo(
                 total=0,
                 count=0,
-                cursor=None,
+                next_cursor=None,
                 per_page=limit,
             ),
         ).to_orjson(404)
@@ -177,7 +181,7 @@ async def merchant_get_items(
         FoodItemResponse.from_db(
             item,
             merchant_info=PartialIDAvatar(
-                id=merchant.merchant_id,
+                id=str(merchant.merchant_id),
                 name=merchant.name,
                 avatar=AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT),
             ),
@@ -190,7 +194,7 @@ async def merchant_get_items(
         page_info=PaginationInfo(
             total=items_associated_count,
             count=len(mapped_items),
-            cursor=str(last_item.id) if last_item is not None else None,
+            next_cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()
@@ -224,11 +228,15 @@ async def merchant_get_orders(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
+            return PaginatedResponseType(error="Invalid cursor", code=400, page_info=PaginationInfo(0, 0, 0)).to_orjson(
+                400
+            )
 
     merchant = await Merchant.find_one(Merchant.merchant_id == to_uuid(id))
     if merchant is None:
-        return PaginatedResponseType[FoodOrderResponse](error="Merchant not found", code=404).to_orjson(404)
+        return PaginatedResponseType[FoodOrderResponse](
+            error="Merchant not found", code=404, page_info=PaginationInfo(0, 0, 0)
+        ).to_orjson(404)
 
     items_args = [FoodOrder.merchant.ref.id == merchant.id]
     not_in_args = NotIn(
@@ -256,7 +264,7 @@ async def merchant_get_orders(
             page_info=PaginationInfo(
                 total=0,
                 count=0,
-                cursor=None,
+                next_cursor=None,
                 per_page=limit,
             ),
         ).to_orjson(404)
@@ -269,7 +277,7 @@ async def merchant_get_orders(
         FoodOrderResponse.from_db(
             item,
             merchant_info=PartialIDAvatar(
-                merchant.merchant_id, merchant.name, AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT)
+                str(merchant.merchant_id), merchant.name, AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT)
             ),
         )
         for item in items_associated
@@ -280,7 +288,7 @@ async def merchant_get_orders(
         page_info=PaginationInfo(
             total=items_associated_count,
             count=len(mapped_items),
-            cursor=str(last_item.id) if last_item is not None else None,
+            next_cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()

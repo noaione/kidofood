@@ -25,10 +25,9 @@ SOFTWARE.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Optional, Type
 
-import pendulum
+from pendulum.datetime import DateTime
 
 from internals.db import FoodItem as FoodItemDB
 from internals.db import FoodOrder as FoodOrderDB
@@ -36,7 +35,7 @@ from internals.db import Merchant as MerchantDB
 from internals.db import OrderStatus
 from internals.db import User as UserDB
 
-from .common import AvatarResponse, AvatarType, PartialID, PartialIDAvatar, pendulum_utc
+from .common import AvatarResponse, AvatarType, PartialID, PartialIDAvatar, _coerce_to_pendulum, pendulum_utc
 from .items import FoodItemResponse
 
 __all__ = ("FoodOrderResponse",)
@@ -52,24 +51,18 @@ class FoodOrderResponse(PartialID):
     merchant: PartialIDAvatar
 
     target_address: str
-    created_at: pendulum.DateTime = field(default_factory=pendulum_utc)
-    updated_at: pendulum.DateTime = field(default_factory=pendulum_utc)
+    created_at: DateTime = field(default_factory=pendulum_utc)
+    updated_at: DateTime = field(default_factory=pendulum_utc)
 
     status: OrderStatus = OrderStatus.PENDING
 
     def __post_init__(self):
-        if isinstance(self.created_at, str):
-            self.created_at = pendulum.parse(self.created_at)
-        if isinstance(self.updated_at, str):
-            self.updated_at = pendulum.parse(self.updated_at)
-        if isinstance(self.created_at, int):
-            self.created_at = pendulum.from_timestamp(self.created_at)
-        if isinstance(self.updated_at, int):
-            self.updated_at = pendulum.from_timestamp(self.updated_at)
-        if isinstance(self.created_at, datetime):
-            self.created_at = pendulum.instance(self.created_at)
-        if isinstance(self.updated_at, datetime):
-            self.updated_at = pendulum.instance(self.updated_at)
+        cc_at = _coerce_to_pendulum(self.created_at)
+        cc_ut = _coerce_to_pendulum(self.updated_at)
+        if cc_at is not None:
+            self.created_at = cc_at
+        if cc_ut is not None:
+            self.updated_at = cc_ut
 
     @classmethod
     def from_db(
@@ -93,13 +86,13 @@ class FoodOrderResponse(PartialID):
             prefetched_items.append(FoodItemResponse.from_db(item, merchant_info))
         if isinstance(merchant, MerchantDB):
             merchant = PartialIDAvatar(
-                merchant.merchant_id,
+                str(merchant.merchant_id),
                 merchant.name,
                 AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT),
             )
         if isinstance(user, UserDB):
             user = PartialIDAvatar(
-                user.user_id,
+                str(user.user_id),
                 user.name,
                 AvatarResponse.from_db(user.avatar, AvatarType.USERS),
             )

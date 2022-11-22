@@ -75,7 +75,7 @@ class SessionHandler:
         backend: RedisBackend,
     ):
         self.model: APIKey = APIKey(
-            **{"in": APIKeyIn.cookie},
+            **{"in": APIKeyIn.cookie},  # type: ignore
             name=cookie_name,
         )
         self._identifier = identifier
@@ -91,15 +91,18 @@ class SessionHandler:
             self.set_cookie(response, data.session_id)
 
     def set_cookie(self, response: Response, session_id: UUID):
+        dumps = self.signer.dumps(session_id.hex)
+        if isinstance(dumps, bytes):
+            dumps = dumps.decode("utf-8")
         response.set_cookie(
             key=self.model.name,
-            value=self.signer.dumps(session_id.hex),
+            value=dumps,
             max_age=self.params.max_age,
             path=self.params.path,
             domain=self.params.domain,
             secure=self.params.secure,
             httponly=self.params.httponly,
-            samesite=self.params.samesite,
+            samesite=self.params.samesite.value,
         )
 
     async def remove_session(self, session_id: Union[str, UUID], response: Optional[Response] = None):
@@ -128,20 +131,20 @@ class SessionHandler:
     async def __call__(self, request: Request):
         signed_session = request.cookies.get(self.model.name)
         if not signed_session:
-            raise SessionError("No session found", status_code=403)
+            raise SessionError(detail="No session found", status_code=403)
 
         try:
             session = UUID(self.signer.loads(signed_session, max_age=self.params.max_age, return_timestamp=False))
         except (SignatureExpired, BadSignature):
-            raise SessionError("Session expired/invalid", status_code=401)
+            raise SessionError(detail="Session expired/invalid", status_code=401)
 
         session_data = await self.backend.read(session)
         if not session_data:
-            raise SessionError("Session expired/invalid", status_code=401)
+            raise SessionError(detail="Session expired/invalid", status_code=401)
         return session_data
 
 
-_GLOBAL_SESSION_HANDLER: SessionHandler = None
+_GLOBAL_SESSION_HANDLER: Optional[SessionHandler] = None
 
 
 def create_session_handler(

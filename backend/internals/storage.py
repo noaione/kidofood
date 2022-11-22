@@ -37,6 +37,7 @@ from aiopath import AsyncPath
 from minio import Minio
 from minio.datatypes import Object
 from minio.helpers import ObjectWriteResult
+from pendulum.datetime import DateTime
 from urllib3.response import HTTPResponse
 
 __all__ = (
@@ -52,7 +53,7 @@ class FileObject:
     filename: str
     content_type: str
     size: int
-    last_modified: Optional[pendulum.DateTime] = None
+    last_modified: Optional[DateTime] = None
 
 
 class AbstractStorage:
@@ -131,7 +132,7 @@ class S3BucketServer(AbstractStorage):
             ldt = data2.last_modified
             if ldt is not None:
                 ldt = pendulum.instance(ldt)
-            return FileObject(path, data2.content_type, data2.size, ldt)
+            return FileObject(path, data2.content_type or "application/octet-stream", data2.size or 0, ldt)
         except Exception:
             return None
 
@@ -224,7 +225,7 @@ class LocalStorage(AbstractStorage):
         await path.unlink(missing_ok=True)
 
 
-_S3SESSION: S3BucketServer = None
+_S3SESSION: Optional[S3BucketServer] = None
 _LOCALSERVER: LocalStorage = LocalStorage(AsyncPath(__file__).absolute().parent.parent.parent)
 
 

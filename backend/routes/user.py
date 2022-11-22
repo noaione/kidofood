@@ -78,7 +78,7 @@ async def auth_enter(user: PartialLogin):
         logger.error(f"User {user.email} password not match")
         return ResponseType(error="Password is incorrect", code=401).to_orjson(401)
 
-    if new_password is not None:
+    if new_password is not None and get_user is not None:
         logger.warning(f"User {user.email} password hash is outdated, updating...")
         get_user.password = new_password
         await get_user.save_changes()

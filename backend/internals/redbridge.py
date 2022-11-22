@@ -76,7 +76,9 @@ class RedisBridge:
     ```
     """
 
-    def __init__(self, host: str, port: int, password: str = None, loop: asyncio.AbstractEventLoop = None):
+    def __init__(
+        self, host: str, port: int, password: Optional[str] = None, loop: Optional[asyncio.AbstractEventLoop] = None
+    ):
         if loop is None:
             self._loop = asyncio.get_event_loop()
         else:
@@ -342,7 +344,7 @@ class RedisBridge:
             except aioredis.RedisError as e:
                 self.logger.debug(f"Failed to set {key}", exc_info=e)
                 res = False
-        return res
+        return res or False
 
     async def setex(self, key: str, data: Any, expires: int) -> bool:
         """Set a new key with provided data BUT with additional expiration time
@@ -409,7 +411,7 @@ class RedisBridge:
 
     async def bulkrm(self, keys: str) -> None:
         if self._is_stopping:
-            return False
+            return
         collection = await self.keys(keys)
         for key in collection:
             await self.rm(key)

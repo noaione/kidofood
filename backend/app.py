@@ -36,7 +36,7 @@ from internals.responses import ORJSONXResponse, ResponseType
 from internals.session import SessionError, create_session_handler, get_session_handler
 from internals.storage import create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
-from internals.utils import get_description, get_version, to_boolean
+from internals.utils import get_description, get_version, to_boolean, try_int
 
 ROOT_DIR = Path(__file__).absolute().parent
 env_config = get_env_config()
@@ -73,7 +73,7 @@ async def on_app_startup():
     elif DB_HOST is not None:
         kfdb = KFDatabase(
             DB_HOST,
-            DB_PORT or 27017,
+            try_int(DB_PORT) or 27017,
             DB_NAME or "kidofood",
             DB_AUTH_STRING,
             DB_AUTH_SOURCE or "admin",
@@ -106,7 +106,7 @@ async def on_app_startup():
     if REDIS_HOST is None:
         raise Exception("No Redis connection information provided!")
     SESSION_MAX_AGE = int(env_config.get("SESSION_MAX_AGE") or 7 * 24 * 60 * 60)
-    create_session_handler(SECRET_KEY, REDIS_HOST, REDIS_PORT, REDIS_PASS, SESSION_MAX_AGE)
+    create_session_handler(SECRET_KEY, REDIS_HOST, try_int(REDIS_PORT) or 6379, REDIS_PASS, SESSION_MAX_AGE)
     logger.info("Session created!")
 
 
@@ -132,7 +132,7 @@ async def session_exception_handler(_: Request, exc: SessionError):
     status_code = exc.status_code
     if status_code < 400:
         status_code = 403
-    return ResponseType(error=exc.detail, status_code=status_code).to_orjson(status_code)
+    return ResponseType(error=exc.detail, code=status_code).to_orjson(status_code)
 
 
 ORJSONDefault = Default(ORJSONXResponse)

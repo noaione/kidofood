@@ -25,15 +25,14 @@ SOFTWARE.
 from __future__ import annotations
 
 from enum import Enum
-from functools import partial as ftpartial
 from typing import Optional
 from uuid import UUID, uuid4
 
-import pendulum
 from beanie import Document, Link
+from pendulum.datetime import DateTime
 from pydantic import BaseModel, Field
 
-from ._doc import _coerce_to_pendulum
+from ._doc import _coerce_to_pendulum, pendulum_utc
 
 __all__ = (
     "ItemType",
@@ -45,7 +44,6 @@ __all__ = (
     "User",
     "FoodOrder",
 )
-pendulum_utc = ftpartial(pendulum.now, tz="UTC")
 
 
 class ItemType(str, Enum):
@@ -104,8 +102,8 @@ class Merchant(Document):
     email: Optional[str]
     website: Optional[str]
 
-    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
-    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    created_at: DateTime = Field(default_factory=pendulum_utc)
+    updated_at: DateTime = Field(default_factory=pendulum_utc)
 
     class Settings:
         name = "FoodMerchants"
@@ -128,8 +126,8 @@ class FoodItem(Document):
 
     merchant: Link[Merchant]
 
-    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
-    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    created_at: DateTime = Field(default_factory=pendulum_utc)
+    updated_at: DateTime = Field(default_factory=pendulum_utc)
 
     class Settings:
         name = "FoodItems"
@@ -155,8 +153,8 @@ class User(Document):
     # merchant association if type is merchant
     merchant: Optional[Link[Merchant]] = Field(default=None)
 
-    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
-    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    created_at: DateTime = Field(default_factory=pendulum_utc)
+    updated_at: DateTime = Field(default_factory=pendulum_utc)
 
     class Settings:
         name = "Users"
@@ -176,8 +174,8 @@ class FoodOrder(Document):
     status: OrderStatus = OrderStatus.PENDING
     target_address: str
 
-    created_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
-    updated_at: pendulum.DateTime = Field(default_factory=pendulum_utc)
+    created_at: DateTime = Field(default_factory=pendulum_utc)
+    updated_at: DateTime = Field(default_factory=pendulum_utc)
 
     class Config:
         collection = "FoodOrders"

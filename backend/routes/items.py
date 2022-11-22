@@ -64,7 +64,9 @@ async def get_all_items(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
+            return PaginatedResponseType(error="Invalid cursor", code=400, page_info=PaginationInfo(0, 0, 0)).to_orjson(
+                400
+            )
 
     items_args = []
     if cursor_id is not None:
@@ -80,7 +82,7 @@ async def get_all_items(
             page_info=PaginationInfo(
                 total=0,
                 count=0,
-                cursor=None,
+                next_cursor=None,
                 per_page=limit,
             ),
         ).to_orjson(404)
@@ -96,7 +98,7 @@ async def get_all_items(
         page_info=PaginationInfo(
             total=items_associated_count,
             count=len(mapped_items),
-            cursor=str(last_item.id) if last_item is not None else None,
+            next_cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()
@@ -112,11 +114,11 @@ async def get_item_by_id(item_id: str):
     Get item by ID.
     """
 
-    item_id = to_uuid(item_id)
-    if item_id is None:
+    item_uuid = to_uuid(item_id)
+    if item_uuid is None:
         return ResponseType(error="Invalid item ID", code=400).to_orjson(400)
 
-    item = await FoodItem.find_one(FoodItem.id == item_id, fetch_links=True)
+    item = await FoodItem.find_one(FoodItem.id == item_uuid, fetch_links=True)
     if item is None:
         return ResponseType(error="Item not found", code=404).to_orjson(404)
 

@@ -52,9 +52,11 @@ class RollingFileHandler(RotatingFileHandler):
     At startup, we check the last file in the directory and start from there.
     """
 
+    maxBytes: int  # to force mypy to stop complaining????
+
     def __init__(
         self,
-        filename: str,
+        filename: os.PathLike,
         mode: str = "a",
         maxBytes: int = 0,
         backupCount: int = 0,
@@ -78,9 +80,8 @@ class RollingFileHandler(RotatingFileHandler):
                 self._last_backup_count = int(last_digit)
 
     def doRollover(self) -> None:
-        if self.stream:
+        if self.stream and not self.stream.closed:
             self.stream.close()
-            self.stream = None
         self._last_backup_count += 1
         next_name = "%s.%d" % (self.baseFilename, self._last_backup_count)
         self.rotate(self.baseFilename, next_name)

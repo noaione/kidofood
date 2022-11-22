@@ -29,13 +29,20 @@ A custom Document class for Beanie, with support of coercing Pendulum DateTime o
 from __future__ import annotations
 
 from datetime import datetime
+from functools import partial as ftpartial
 from typing import ForwardRef, get_args
 
 import pendulum
 from beanie import Document
+from pendulum.datetime import DateTime
+from pendulum.parser import parse as pendulum_parse
 from pydantic.typing import resolve_annotations
 
-__all__ = ("_coerce_to_pendulum",)
+__all__ = (
+    "_coerce_to_pendulum",
+    "pendulum_utc",
+)
+pendulum_utc = ftpartial(pendulum.now, tz="UTC")
 
 
 def _unpack_forwardref(annotation):
@@ -59,7 +66,7 @@ def _coerce_to_pendulum(clss: Document):
         fwd_unpack = _unpack_forwardref(act_type)
 
         try:
-            is_pdt_type = issubclass(act_type, pendulum.DateTime) or "pendulum.DateTime" in str(fwd_unpack)
+            is_pdt_type = issubclass(act_type, DateTime) or "pendulum.DateTime" in str(fwd_unpack)
         except Exception:
             is_pdt_type = "pendulum.DateTime" in str(fwd_unpack)
             if not is_pdt_type:
@@ -71,11 +78,11 @@ def _coerce_to_pendulum(clss: Document):
             current = object.__getattribute__(clss, key)
             if current is None:
                 continue
-            if isinstance(current, pendulum.DateTime):
+            if isinstance(current, DateTime):
                 continue
             if isinstance(current, str):
                 # Assume ISO8601 format
-                object.__setattr__(clss, key, pendulum.parse(current))
+                object.__setattr__(clss, key, pendulum_parse(current))
             elif isinstance(current, (int, float)):
                 # Unix timestamp
                 object.__setattr__(clss, key, pendulum.from_timestamp(current))

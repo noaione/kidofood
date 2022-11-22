@@ -24,6 +24,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
+from typing import Optional
 from uuid import UUID
 
 from beanie import Link
@@ -57,7 +58,7 @@ class PartialUserSession(BaseModel):
 
 class UserSession(PartialUserSession):
     user_db: str  # ObjectId, stringified
-    merchant_info: Link[Merchant] = None
+    merchant_info: Optional[Link[Merchant]] = None
     # RememberMe
     remember_me: bool
     remember_latch: bool

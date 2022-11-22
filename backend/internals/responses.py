@@ -30,7 +30,8 @@ from typing import Any, Generic, Optional, TypeVar
 import orjson
 from bson import ObjectId
 from fastapi.responses import JSONResponse
-from pendulum import DateTime, Time
+from pendulum.datetime import DateTime
+from pendulum.time import Time
 from pydantic.generics import GenericModel
 
 DataType = TypeVar("DataType")
@@ -135,7 +136,7 @@ class PaginatedResponseType(GenericModel, Generic[DataType]):
 class PaginatedMultiResponseType(GenericModel, Generic[DataType]):
     error: str = "Success"
     code: int = 200
-    data: DataType = {}
+    data: DataType = {}  # type: ignore
     page_info: dict[str, PaginationInfo] = {}
 
     def to_orjson(self, status: int = 200):

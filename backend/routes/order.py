@@ -72,7 +72,9 @@ async def get_user_orders(
         try:
             cursor_id = ObjectId(cursor)
         except (TypeError, InvalidId):
-            return PaginatedResponseType(error="Invalid cursor", code=400).to_orjson(400)
+            return PaginatedResponseType(error="Invalid cursor", code=400, page_info=PaginationInfo(0, 0, 0)).to_orjson(
+                400
+            )
 
     items_args = [FoodOrder.user.ref.id == PydanticObjectId(session.user_db)]
     not_in_args = NotIn(
@@ -100,7 +102,7 @@ async def get_user_orders(
             page_info=PaginationInfo(
                 total=0,
                 count=0,
-                cursor=None,
+                next_cursor=None,
                 per_page=limit,
             ),
         ).to_orjson(404)
@@ -115,7 +117,7 @@ async def get_user_orders(
         page_info=PaginationInfo(
             total=items_associated_count,
             count=len(mapped_items),
-            cursor=str(last_item.id) if last_item is not None else None,
+            next_cursor=str(last_item.id) if last_item is not None else None,
             per_page=limit,
         ),
     ).to_orjson()

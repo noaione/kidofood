@@ -25,16 +25,22 @@ SOFTWARE.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Optional
 
-import pendulum
+from pendulum.datetime import DateTime
 
 from internals.db import FoodItem as FoodItemDB
 from internals.db import ItemType
 from internals.db import Merchant as MerchantDB
 
-from .common import AvatarResponse, AvatarType, PartialIDAvatar, PartialIDName, pendulum_utc
+from .common import (
+    AvatarResponse,
+    AvatarType,
+    PartialIDAvatar,
+    PartialIDName,
+    _coerce_to_pendulum,
+    pendulum_utc,
+)
 
 __all__ = ("FoodItemResponse",)
 
@@ -46,23 +52,17 @@ class FoodItemResponse(PartialIDName):
     stock: int
     type: ItemType
     merchant: PartialIDAvatar
-    created_at: pendulum.DateTime = field(default_factory=pendulum_utc)
-    updated_at: pendulum.DateTime = field(default_factory=pendulum_utc)
+    created_at: DateTime = field(default_factory=pendulum_utc)
+    updated_at: DateTime = field(default_factory=pendulum_utc)
     image: Optional[AvatarResponse] = None
 
     def __post_init__(self):
-        if isinstance(self.created_at, str):
-            self.created_at = pendulum.parse(self.created_at)
-        if isinstance(self.updated_at, str):
-            self.updated_at = pendulum.parse(self.updated_at)
-        if isinstance(self.created_at, int):
-            self.created_at = pendulum.from_timestamp(self.created_at)
-        if isinstance(self.updated_at, int):
-            self.updated_at = pendulum.from_timestamp(self.updated_at)
-        if isinstance(self.created_at, datetime):
-            self.created_at = pendulum.instance(self.created_at)
-        if isinstance(self.updated_at, datetime):
-            self.updated_at = pendulum.instance(self.updated_at)
+        cc_at = _coerce_to_pendulum(self.created_at)
+        cc_ut = _coerce_to_pendulum(self.updated_at)
+        if cc_at is not None:
+            self.created_at = cc_at
+        if cc_ut is not None:
+            self.updated_at = cc_ut
 
     @classmethod
     def from_db(
@@ -78,7 +78,7 @@ class FoodItemResponse(PartialIDName):
             raise ValueError("Merchant info is required, either passing the prefetched DB or passing the merchant info")
         if isinstance(merchant, MerchantDB):
             merchant = PartialIDAvatar(
-                merchant.merchant_id,
+                str(merchant.merchant_id),
                 merchant.name,
                 AvatarResponse.from_db(merchant.avatar, AvatarType.MERCHANT),
             )
@@ -87,9 +87,10 @@ class FoodItemResponse(PartialIDName):
             name=db.name,
             description=db.description,
             price=db.price,
-            availability=db.stock,
+            stock=db.stock,
             type=db.type,
             image=avatar,
             created_at=db.created_at,
             updated_at=db.updated_at,
+            merchant=merchant,
         )

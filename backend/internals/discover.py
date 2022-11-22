@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 from importlib import import_module, util
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Union
 
 from fastapi import APIRouter, FastAPI
 
@@ -39,7 +39,10 @@ logger = logging.getLogger("Internals.Discovery")
 
 
 def discover_routes(
-    app_or_router: Union[APIRouter, FastAPI], route_path: Path, recursive: bool = False, **router_kwargs: Dict[str, Any]
+    app_or_router: Union[APIRouter, FastAPI],
+    route_path: Path,
+    recursive: bool = False,
+    **router_kwargs,
 ):
     mod = app_or_router.__module__
     _imported = set()
@@ -56,6 +59,9 @@ def discover_routes(
         if spec is None:
             logger.warning(f"Failed to load route {route.name}")
             continue
+        if spec.loader is None:
+            logger.warning(f"Unable to specify module loader for {route.name}")
+            continue
         module = util.module_from_spec(spec)
         spec.loader.exec_module(module)
         router_code = getattr(module, "router", None)
@@ -65,5 +71,5 @@ def discover_routes(
         if not isinstance(router_code, APIRouter):
             logger.warning(f'"router" variable in {route.stem} is not an fastapi.APIRouter')
             continue
-        logger.info(f'Attaching route "{route.stem}" to {app_or_router.prefix}')
+        logger.info(f'Attaching route "{route.stem}"')
         app_or_router.include_router(router_code, **router_kwargs)

@@ -25,9 +25,15 @@ SOFTWARE.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from functools import partial as ftpartial
+from typing import Any
 
 import pendulum
+from pendulum.parser import parse as pendulum_parse
+from pendulum.datetime import DateTime
+from pendulum.date import Date
+from pendulum.time import Time
 
 from internals.db import AvatarImage
 
@@ -38,8 +44,27 @@ __all__ = (
     "PartialID",
     "PartialIDName",
     "PartialIDAvatar",
+    "_coerce_to_pendulum",
 )
 pendulum_utc = ftpartial(pendulum.now, tz="UTC")
+
+
+def _coerce_to_pendulum(data: Any):
+    if isinstance(data, str):
+        parsed = pendulum_parse(data)
+        if parsed is None:
+            raise ValueError(f"Cannot parse {data} to pendulum.DateTime")
+        if isinstance(parsed, DateTime):
+            return parsed
+        if isinstance(parsed, Date):
+            return DateTime.combine(parsed, Time(0, 0, 0, 0, tzinfo=pendulum_utc().tz))
+        if isinstance(parsed, Time):
+            return DateTime.combine(pendulum_utc().date(), parsed)
+    if isinstance(data, int):
+        return pendulum.from_timestamp(data)
+    if isinstance(data, datetime):
+        return pendulum.instance(data)
+    return None
 
 
 class AvatarType:

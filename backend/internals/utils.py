@@ -26,13 +26,14 @@ from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Union, overload
+from typing import Any, Optional, Union, overload
 from uuid import UUID, uuid4
 
 __all__ = (
     "make_uuid",
     "to_uuid",
     "to_boolean",
+    "try_int",
     "get_version",
     "get_description",
 )
@@ -67,6 +68,13 @@ def to_boolean(value: Any) -> bool:
     if isinstance(value, str):
         return value.lower() in ("yes", "true", "t", "y", "1")
     return bool(value)
+
+
+def try_int(value: Any) -> Optional[int]:
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 
 def get_version():

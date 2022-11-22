@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -46,7 +46,7 @@ class KFDatabase:
         ip_hostname_or_url: str,
         port: int = 27017,
         dbname: str = "kidofood",
-        auth_string: str = None,
+        auth_string: Optional[str] = None,
         auth_source: str = "admin",
         tls: bool = False,
     ):
@@ -87,7 +87,7 @@ class KFDatabase:
             self._url += "&retryWrites=true&w=majority"
 
     async def validate_connection(self):
-        return await self._db.command({"ping": 1})
+        return await self._db.command({"ping": 1})  # type: ignore
 
     async def ping_server(self):
         t1_ping = time.perf_counter()
@@ -109,5 +109,5 @@ class KFDatabase:
                 FoodOrder,
                 Merchant,
                 User,
-            ],
+            ],  # type: ignore (complained badly)
         )
