@@ -58,7 +58,7 @@ line_length = 110
 skip_gitignore = true
 
 [tool.pyright]
-include = ["internals", "pipelines", "routes", "app.py"]
+include = ["internals", "pipelines", "routes", "graphql", "app.py"]
 exclude = ["venv", "env", "node_modules", ".venv", ".env", ".nox", ".pytest_cache", ".mypy_cache", ".tox", "build", "dist", "_build", "**/__pycache__"]
 ignore = ["_testing"]
 
