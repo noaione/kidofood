@@ -29,17 +29,20 @@ from typing import Optional, Union
 
 import strawberry as gql
 from beanie.operators import In as OpIn
+from beanie.operators import RegEx as OpRegEx
 from bson import ObjectId
 from bson.errors import InvalidId
 
+from internals.db import FoodItem as FoodItemDB
 from internals.db import Merchant as MerchantDB
 
-from .models import Connection, Merchant, PageInfo
+from .models import Connection, FoodItem, Merchant, PageInfo
 
 __all__ = (
     "Cursor",
     "SortDirection",
     "resolve_merchant_paginated",
+    "resolve_food_items_paginated",
 )
 Cursor = str
 
@@ -81,8 +84,26 @@ def parse_ids(ids: Optional[Union[gql.ID, list[gql.ID]]]) -> Optional[list[Objec
     return parsed_ids
 
 
+def query_or_ids(
+    query: Optional[str] = gql.UNSET,
+    ids: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
+) -> Optional[Union[list[ObjectId], str]]:
+    parsed_ids = parse_ids(ids)
+    if query is None and parsed_ids is not None:
+        return parsed_ids
+    if query is gql.UNSET and parsed_ids is not None:
+        return parsed_ids
+    if query is None and parsed_ids is None:
+        return None
+    valid_query = isinstance(query, str) and len(query) > 0
+    if valid_query and parsed_ids is None:
+        return query
+    raise ValueError("Query and ids are mutually exclusive")
+
+
 async def resolve_merchant_paginated(
     id: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
+    query: Optional[str] = gql.UNSET,
     limit: int = 20,
     cursor: Optional[Cursor] = gql.UNSET,
     sort: SortDirection = SortDirection.ASC,
@@ -90,12 +111,17 @@ async def resolve_merchant_paginated(
     act_limit = limit + 1
     direction = "-" if sort is SortDirection.DESCENDING else "+"
 
-    ids_set = parse_ids(id)
+    ids_set = query_or_ids(query, id)
     cursor_id = parse_cursor(cursor)
 
     items_args = []
-    if ids_set is not None and len(ids_set) > 0:
+    added_query_id = False
+    if isinstance(ids_set, list) and len(ids_set) > 0:
         items_args.append(OpIn(MerchantDB.id, ids_set))
+        added_query_id = True
+    elif isinstance(ids_set, str):
+        items_args.append(OpRegEx(MerchantDB.name, ids_set, options="i"))
+        added_query_id = True
     if cursor_id is not None:
         items_args.append(MerchantDB.id >= cursor_id)
 
@@ -114,8 +140,8 @@ async def resolve_merchant_paginated(
             nodes=[],
         )
 
-    if ids_set is not None and len(ids_set) > 0:
-        items_count = await MerchantDB.find(OpIn(MerchantDB.id, ids_set)).count()
+    if added_query_id:
+        items_count = await MerchantDB.find(items_args[0]).count()
     else:
         items_count = await MerchantDB.find().count()
 
@@ -126,6 +152,70 @@ async def resolve_merchant_paginated(
     has_next_page = next_cursor is not None
 
     mapped_items = [Merchant.from_db(item) for item in items]
+
+    return Connection(
+        _total=len(mapped_items),
+        page_info=PageInfo(
+            total_results=items_count,
+            per_page=limit,
+            next_cursor=to_cursor(next_cursor),
+            has_next_page=has_next_page,
+        ),
+        nodes=mapped_items,
+    )
+
+
+async def resolve_food_items_paginated(
+    id: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
+    query: Optional[str] = gql.UNSET,
+    limit: int = 20,
+    cursor: Optional[Cursor] = gql.UNSET,
+    sort: SortDirection = SortDirection.ASC,
+) -> Connection[FoodItem]:
+    act_limit = limit + 1
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
+
+    ids_set = query_or_ids(query, id)
+    cursor_id = parse_cursor(cursor)
+
+    items_args = []
+    added_query_id = False
+    if isinstance(ids_set, list) and len(ids_set) > 0:
+        items_args.append(OpIn(FoodItemDB.id, ids_set))
+        added_query_id = True
+    elif isinstance(ids_set, str):
+        items_args.append(OpRegEx(FoodItemDB.name, ids_set, options="i"))
+        added_query_id = True
+    if cursor_id is not None:
+        items_args.append(FoodItemDB.id >= cursor_id)
+
+    items = (
+        await FoodItemDB.find(
+            *items_args,
+        )
+        .sort(f"{direction}_id")
+        .limit(act_limit)
+        .to_list()
+    )
+    if len(items) < 1:
+        return Connection(
+            _total=0,
+            page_info=PageInfo(total_results=0, per_page=limit, next_cursor=None, has_next_page=False),
+            nodes=[],
+        )
+
+    if added_query_id:
+        items_count = await FoodItemDB.find(items_args[0]).count()
+    else:
+        items_count = await FoodItemDB.find().count()
+
+    last_item = None
+    if len(items) > limit:
+        last_item = items.pop()
+    next_cursor = last_item.id if last_item is not None else None
+    has_next_page = next_cursor is not None
+
+    mapped_items = [FoodItem.from_db(item) for item in items]
 
     return Connection(
         _total=len(mapped_items),
