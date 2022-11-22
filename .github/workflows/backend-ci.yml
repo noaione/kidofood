@@ -44,5 +44,5 @@ jobs:
         uses: jakebailey/pyright-action@v1
         with:
           working-directory: backend
-          venv-path: backend/.venv
-          project: backend/pyproject.toml
+          venv-path: .venv
+          project: pyproject.toml
