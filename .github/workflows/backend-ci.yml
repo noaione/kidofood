@@ -39,3 +39,6 @@ jobs:
         run: |
           cd backend
           python3 pipelines/multi-lint.py
+
+      - name: Type check
+        uses: jakebailey/pyright-action@v1
