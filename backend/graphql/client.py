@@ -35,6 +35,29 @@ from .resolvers import Cursor, SortDirection, resolve_food_items_paginated, reso
 
 
 @gql.type
+class QuerySearch:
+    @gql.field
+    async def merchants(
+        self,
+        query: str,
+        limit: int = 20,
+        cursor: Optional[Cursor] = gql.UNSET,
+        sort: SortDirection = SortDirection.ASC,
+    ) -> Connection[Merchant]:
+        return await resolve_merchant_paginated(query=query, limit=limit, cursor=cursor, sort=sort)
+
+    @gql.field
+    async def items(
+        self,
+        query: str,
+        limit: int = 20,
+        cursor: Optional[Cursor] = gql.UNSET,
+        sort: SortDirection = SortDirection.ASC,
+    ) -> Connection[FoodItem]:
+        return await resolve_food_items_paginated(query=query, limit=limit, cursor=cursor, sort=sort)
+
+
+@gql.type
 class Query:
     @gql.field
     async def user(self, info: Info[KidoFoodContext, None]) -> User:
@@ -62,6 +85,8 @@ class Query:
         sort: SortDirection = SortDirection.ASC,
     ) -> Connection[FoodItem]:
         return await resolve_food_items_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
+
+    search: QuerySearch
 
 
 @gql.type
