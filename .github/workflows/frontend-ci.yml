@@ -1,7 +1,13 @@
 name: CI (Frontend)
 on:
   push:
+    paths:
+      - 'frontend/**'
+      - 'pnpm-lock.yaml'
   pull_request:
+    paths:
+      - 'frontend/**'
+      - 'pnpm-lock.yaml'
 
 jobs:
   lint:

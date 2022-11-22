@@ -1,7 +1,11 @@
 name: CI (Backend)
 on:
   push:
+    paths:
+      - 'backend/**'
   pull_request:
+    paths:
+      - 'backend/**'
 
 jobs:
   lint:
