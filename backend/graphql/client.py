@@ -23,3 +23,32 @@ SOFTWARE.
 """
 
 from __future__ import annotations
+
+from typing import Optional, Union
+
+import strawberry as gql
+from strawberry.types import Info
+
+from .context import KidoFoodContext
+from .models import Connection, Merchant, User
+from .resolvers import Cursor, SortDirection, resolve_merchant_paginated
+
+
+@gql.type
+class Query:
+    @gql.field
+    async def user(self, info: Info[KidoFoodContext, None]) -> User:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+
+        return User.from_session(info.context.user)
+
+    @gql.field
+    async def merchants(
+        self,
+        id: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
+        limit: int = 20,
+        cursor: Optional[Cursor] = gql.UNSET,
+        sort: SortDirection = SortDirection.ASC,
+    ) -> Connection[Merchant]:
+        return await resolve_merchant_paginated(id=id, limit=limit, cursor=cursor, sort=sort)

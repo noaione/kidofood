@@ -24,7 +24,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from typing import List, Generic, TypeVar, Optional
+from typing import Generic, List, Optional, TypeVar
 
 import strawberry as gql
 
