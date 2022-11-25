@@ -21,8 +21,10 @@
     },
     "isort.importStrategy": "fromEnvironment",
     "python.languageServer": "Pylance",
-    "autoDocstring.docstringFormat": "sphinx",
-    "tailwindCSS.emmetCompletions": true
+    "autoDocstring.docstringFormat": "numpy",
+    "tailwindCSS.emmetCompletions": true,
+    "autoDocstring.includeName": true,
+    "autoDocstring.startOnNewLine": true
   },
   "extensions": {
     "recommendations": [
