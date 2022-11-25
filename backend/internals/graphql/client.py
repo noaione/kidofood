@@ -125,7 +125,10 @@ class Subscription:
 
 
 def _has_any_function_or_attr(obj: Union[type, object]) -> bool:
-    return any((callable(getattr(obj, name, None)) for name in dir(obj) if not name.startswith("_")))
+    any_function = any((callable(getattr(obj, name, None)) for name in dir(obj) if not name.startswith("_")))
+    annotations = getattr(obj, "__annotations__", None)
+    any_attr = annotations is not None and len(annotations) > 0
+    return any_function or any_attr
 
 
 _schema_params = {
