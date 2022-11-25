@@ -160,7 +160,8 @@ class S3BucketServer(AbstractStorage):
 
 class LocalStorage(AbstractStorage):
     def __init__(self, root_path: Union[Path, AsyncPath]):
-        self._root: AsyncPath = (root_path if isinstance(root_path, AsyncPath) else AsyncPath(root_path)) / "storages"
+        self.__base: AsyncPath = root_path if isinstance(root_path, AsyncPath) else AsyncPath(root_path)
+        self._root: AsyncPath = self.__base / "storages"
         self._started = False
 
     async def start(self):
