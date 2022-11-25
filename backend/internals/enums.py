@@ -30,6 +30,7 @@ __all__ = (
     "ItemType",
     "UserType",
     "OrderStatus",
+    "AvatarType",
 )
 
 
