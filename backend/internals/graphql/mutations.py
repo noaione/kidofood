@@ -23,11 +23,12 @@ SOFTWARE.
 """
 
 from __future__ import annotations
+
 import logging
 from typing import Optional
-from beanie import WriteRules
 
 import strawberry as gql
+from beanie import WriteRules
 
 from internals.db import AvatarImage
 from internals.db import Merchant as MerchantDB

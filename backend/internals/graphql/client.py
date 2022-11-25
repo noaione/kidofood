@@ -26,25 +26,25 @@ from __future__ import annotations
 
 from typing import Optional, Union, cast
 from uuid import UUID
-from fastapi import UploadFile
 
 import strawberry as gql
-from strawberry.types import Info
+from fastapi import UploadFile
 from strawberry.file_uploads import Upload
+from strawberry.types import Info
 
 from internals.db import Merchant as MerchantDB
 from internals.session import UserSession
 
 from .context import KidoFoodContext
 from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, UserGQL
-from .mutations import mutate_login_user, mutate_register_user, mutate_apply_new_merchant
+from .mutations import mutate_apply_new_merchant, mutate_login_user, mutate_register_user
 from .resolvers import (
     Cursor,
     SortDirection,
-    resolve_user_from_db,
     resolve_food_items_paginated,
     resolve_food_order_paginated,
     resolve_merchant_paginated,
+    resolve_user_from_db,
 )
 from .scalars import UUID as UUID2
 

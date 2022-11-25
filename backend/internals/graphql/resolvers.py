@@ -28,7 +28,8 @@ from enum import Enum
 from typing import Optional, Union
 
 import strawberry as gql
-from beanie.operators import Eq as OpEq, In as OpIn
+from beanie.operators import Eq as OpEq
+from beanie.operators import In as OpIn
 from beanie.operators import RegEx as OpRegEx
 from bson import ObjectId
 from bson.errors import InvalidId
