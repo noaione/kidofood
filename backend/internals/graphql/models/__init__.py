@@ -1,6 +1,6 @@
 """
-graphql.models
-~~~~~~~~~~~~~~
+internals.graphql.models
+~~~~~~~~~~~~~~~~~~~~~~~~
 Contains all of the GraphQL models type.
 
 :copyright: (c) 2022-present noaione

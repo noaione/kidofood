@@ -33,6 +33,13 @@ from .context import KidoFoodContext
 from .models import Connection, FoodItem, Merchant, User
 from .resolvers import Cursor, SortDirection, resolve_food_items_paginated, resolve_merchant_paginated
 
+__all__ = (
+    "Query",
+    "Mutation",
+    "Subscription",
+    "schema",
+)
+
 
 @gql.type
 class QuerySearch:
@@ -97,3 +104,6 @@ class Mutation:
 @gql.type
 class Subscription:
     pass
+
+
+schema = gql.Schema(query=Query, mutation=Mutation, subscription=Subscription)
