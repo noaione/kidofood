@@ -28,7 +28,7 @@ from typing import Optional
 
 from strawberry.fastapi import BaseContext
 
-from internals.session import UserSession, SessionHandler
+from internals.session import SessionHandler, UserSession
 
 __all__ = ("KidoFoodContext",)
 

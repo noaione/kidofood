@@ -29,12 +29,11 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.datastructures import Default
 from fastapi.responses import RedirectResponse
-from strawberry.fastapi import GraphQLRouter
 from strawberry.printer import print_schema
 
 from internals.db import KFDatabase
 from internals.discover import discover_routes
-from internals.graphql import KidoFoodContext, schema
+from internals.graphql import KidoFoodContext, KidoGraphQLRouter, schema
 from internals.responses import ORJSONXResponse, ResponseType
 from internals.session import SessionError, check_session, create_session_handler, get_session_handler
 from internals.storage import create_s3_server, get_s3_or_local
@@ -139,11 +138,12 @@ async def session_exception_handler(_: Request, exc: SessionError):
 
 
 async def gql_user_context(request: Request):
+    session = get_session_handler()
     try:
-        session = await check_session(request)
-        return KidoFoodContext(user=session)
+        user = await check_session(request)
+        return KidoFoodContext(session=session, user=user)
     except Exception:
-        return KidoFoodContext()
+        return KidoFoodContext(session=session)
 
 
 async def get_context(
@@ -155,7 +155,7 @@ async def get_context(
 ORJSONDefault = Default(ORJSONXResponse)
 # Auto add routes using discovery
 discover_routes(router, ROOT_DIR / "routes", recursive=True, default_response_class=ORJSONDefault)
-graphql_app = GraphQLRouter(
+graphql_app = KidoGraphQLRouter(
     schema,
     context_getter=get_context,
 )

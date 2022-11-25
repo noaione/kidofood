@@ -10,5 +10,8 @@ Contains all of the GraphQL schema and mutations
 from . import models
 from .client import *
 from .context import *
+from .mutations import *
 from .resolvers import *
+from .router import *
+from .scalars import *
 from .subscriptions import *
