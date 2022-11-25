@@ -29,14 +29,14 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.datastructures import Default
 from fastapi.responses import RedirectResponse
-from strawberry.printer import print_schema
 from strawberry.fastapi import GraphQLRouter
+from strawberry.printer import print_schema
 
 from internals.db import KFDatabase
 from internals.discover import discover_routes
-from internals.graphql import schema, KidoFoodContext
+from internals.graphql import KidoFoodContext, schema
 from internals.responses import ORJSONXResponse, ResponseType
-from internals.session import SessionError, create_session_handler, get_session_handler, check_session
+from internals.session import SessionError, check_session, create_session_handler, get_session_handler
 from internals.storage import create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean, try_int

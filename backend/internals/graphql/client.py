@@ -30,13 +30,13 @@ import strawberry as gql
 from strawberry.types import Info
 
 from .context import KidoFoodContext
-from .models import Connection, FoodItem, Merchant, User, FoodOrder
+from .models import Connection, FoodItem, FoodOrder, Merchant, User
 from .resolvers import (
     Cursor,
     SortDirection,
     resolve_food_items_paginated,
-    resolve_merchant_paginated,
     resolve_food_order_paginated,
+    resolve_merchant_paginated,
 )
 
 __all__ = (

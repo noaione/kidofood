@@ -28,7 +28,6 @@ import strawberry as gql
 
 from internals.db import AvatarImage as AvatarImageModel
 
-
 __all__ = ("AvatarImage",)
 
 

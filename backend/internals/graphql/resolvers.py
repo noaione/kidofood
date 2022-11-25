@@ -37,7 +37,7 @@ from internals.db import FoodItem as FoodItemDB
 from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
 
-from .models import Connection, FoodItem, Merchant, PageInfo, FoodOrder
+from .models import Connection, FoodItem, FoodOrder, Merchant, PageInfo
 
 __all__ = (
     "Cursor",
