@@ -30,8 +30,14 @@ import strawberry as gql
 from strawberry.types import Info
 
 from .context import KidoFoodContext
-from .models import Connection, FoodItem, Merchant, User
-from .resolvers import Cursor, SortDirection, resolve_food_items_paginated, resolve_merchant_paginated
+from .models import Connection, FoodItem, Merchant, User, FoodOrder
+from .resolvers import (
+    Cursor,
+    SortDirection,
+    resolve_food_items_paginated,
+    resolve_merchant_paginated,
+    resolve_food_order_paginated,
+)
 
 __all__ = (
     "Query",
@@ -92,6 +98,16 @@ class Query:
         sort: SortDirection = SortDirection.ASC,
     ) -> Connection[FoodItem]:
         return await resolve_food_items_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
+
+    @gql.field
+    async def orders(
+        self,
+        id: Optional[list[gql.ID]] = gql.UNSET,
+        limit: int = 20,
+        cursor: Optional[Cursor] = gql.UNSET,
+        sort: SortDirection = SortDirection.ASC,
+    ) -> Connection[FoodOrder]:
+        return await resolve_food_order_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
 
     search: QuerySearch
 

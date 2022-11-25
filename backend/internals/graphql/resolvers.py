@@ -34,15 +34,17 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from internals.db import FoodItem as FoodItemDB
+from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
 
-from .models import Connection, FoodItem, Merchant, PageInfo
+from .models import Connection, FoodItem, Merchant, PageInfo, FoodOrder
 
 __all__ = (
     "Cursor",
     "SortDirection",
     "resolve_merchant_paginated",
     "resolve_food_items_paginated",
+    "resolve_food_order_paginated",
 )
 Cursor = str
 
@@ -217,6 +219,66 @@ async def resolve_food_items_paginated(
     has_next_page = next_cursor is not None
 
     mapped_items = [FoodItem.from_db(item) for item in items]
+
+    return Connection(
+        count=len(mapped_items),
+        page_info=PageInfo(
+            total_results=items_count,
+            per_page=limit,
+            next_cursor=to_cursor(next_cursor),
+            has_next_page=has_next_page,
+        ),
+        nodes=mapped_items,
+    )
+
+
+async def resolve_food_order_paginated(
+    id: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
+    limit: int = 20,
+    cursor: Optional[Cursor] = gql.UNSET,
+    sort: SortDirection = SortDirection.ASC,
+) -> Connection[FoodOrder]:
+    act_limit = limit + 1
+    direction = "-" if sort is SortDirection.DESCENDING else "+"
+
+    ids_set = query_or_ids(None, id)
+    cursor_id = parse_cursor(cursor)
+
+    items_args = []
+    added_query_id = False
+    if isinstance(ids_set, list) and len(ids_set) > 0:
+        items_args.append(OpIn(FoodOrderDB.id, ids_set))
+        added_query_id = True
+    if cursor_id is not None:
+        items_args.append(FoodOrderDB.id >= cursor_id)
+
+    items = (
+        await FoodOrderDB.find(
+            *items_args,
+        )
+        .sort(f"{direction}_id")
+        .limit(act_limit)
+        .to_list()
+    )
+    if len(items) < 1:
+        return Connection(
+            count=0,
+            page_info=PageInfo(total_results=0, per_page=limit, next_cursor=None, has_next_page=False),
+            nodes=[],
+        )
+
+    if added_query_id:
+        items_count = await FoodOrderDB.find(items_args[0]).count()
+    else:
+        items_count = await FoodOrderDB.find().count()
+
+    last_item = None
+    if len(items) > limit:
+        last_item = items.pop()
+    next_cursor = last_item.id if last_item is not None else None
+    has_next_page = next_cursor is not None
+
+    mapped_items = [FoodOrder.from_db(item) for item in items]
 
     return Connection(
         count=len(mapped_items),
