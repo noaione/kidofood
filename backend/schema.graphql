@@ -1,3 +1,10 @@
+"""The approval status of an entity"""
+enum ApprovalStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
 """An avatar/image for an entity"""
 type AvatarImage {
   """The key of the image"""
@@ -10,6 +17,7 @@ type AvatarImage {
 """Date with time (isoformat)"""
 scalar DateTime
 
+"""Food/Item model"""
 type FoodItem {
   """The ID of the item"""
   id: UUID!
@@ -53,6 +61,7 @@ type FoodItemConnection {
   nodes: [FoodItem!]!
 }
 
+"""Food/Item order model"""
 type FoodOrder {
   """The ID of the order"""
   id: UUID!
@@ -100,6 +109,7 @@ enum ItemType {
   PACKAGE
 }
 
+"""Merchant model"""
 type Merchant {
   """The ID of the merchant"""
   id: UUID!
@@ -118,6 +128,9 @@ type Merchant {
 
   """The last update time of the merchant"""
   updatedAt: DateTime!
+
+  """The approval status of the merchant"""
+  approved: ApprovalStatus!
 
   """The avatar of the merchant"""
   avatar: AvatarImage
@@ -143,6 +156,9 @@ type MerchantConnection {
   nodes: [Merchant!]!
 }
 
+"""Either `Merchant` if success or `Result` if failure detected"""
+union MerchantResult = Result | Merchant
+
 type Mutation {
   """Login to KidoFood"""
   loginUser(email: String!, password: String!): UserResult!
@@ -152,6 +168,9 @@ type Mutation {
 
   """Register to KidoFood"""
   registerUser(email: String!, password: String!, name: String!): UserResult!
+
+  """Apply for merchant"""
+  applyMerchant(name: String!, description: String!, address: String!, avatar: Upload): MerchantResult!
 }
 
 """The order status"""
@@ -227,6 +246,9 @@ enum SortDirection {
 """An UUID4 formatted string"""
 scalar UUID
 
+scalar Upload
+
+"""User model"""
 type User {
   """The ID of the User"""
   id: UUID!
