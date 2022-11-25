@@ -90,7 +90,7 @@ class KidoGraphQLRouter(GraphQLRouter):
         # -->
         # <-- KidoFood: Add session updater using latch
         if context.session_latch:
-            logging.info("Updating session because of latch is True")
+            logger.info("Updating session because of latch is True")
             if context.user is None:
                 cr_user: Optional[UserSession] = None
                 try:
@@ -103,5 +103,6 @@ class KidoGraphQLRouter(GraphQLRouter):
                     await context.session.remove_session(cr_user.session_id, actual_response)
             else:
                 await context.session.set_session(context.user, actual_response)
+        # -->
 
         return self._merge_responses(response, actual_response)
