@@ -76,7 +76,7 @@ class Query:
     @gql.field
     async def merchants(
         self,
-        id: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
+        id: Optional[list[gql.ID]] = gql.UNSET,
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
@@ -86,7 +86,7 @@ class Query:
     @gql.field
     async def items(
         self,
-        id: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
+        id: Optional[list[gql.ID]] = gql.UNSET,
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
@@ -106,4 +106,18 @@ class Subscription:
     pass
 
 
-schema = gql.Schema(query=Query, mutation=Mutation, subscription=Subscription)
+def _has_any_function_or_attr(obj: Union[type, object]) -> bool:
+    return any((callable(getattr(obj, name, None)) for name in dir(obj) if not name.startswith("_")))
+
+
+_schema_params = {
+    "query": Query,
+    "mutation": None,
+    "subscription": None,
+}
+if _has_any_function_or_attr(Mutation):
+    _schema_params["mutation"] = Mutation
+if _has_any_function_or_attr(Subscription):
+    _schema_params["subscription"] = Subscription
+
+schema = gql.Schema(**_schema_params)
