@@ -28,11 +28,12 @@ from typing import Optional
 
 from strawberry.fastapi import BaseContext
 
-from internals.session import UserSession
+from internals.session import UserSession, SessionHandler
 
 __all__ = ("KidoFoodContext",)
 
 
 class KidoFoodContext(BaseContext):
-    def __init__(self, user: Optional[UserSession] = None):
+    def __init__(self, session: SessionHandler, user: Optional[UserSession] = None):
+        self.session: SessionHandler = session
         self.user: Optional[UserSession] = user
