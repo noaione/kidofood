@@ -37,3 +37,4 @@ class KidoFoodContext(BaseContext):
     def __init__(self, session: SessionHandler, user: Optional[UserSession] = None):
         self.session: SessionHandler = session
         self.user: Optional[UserSession] = user
+        self.session_latch: bool = False

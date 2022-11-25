@@ -143,6 +143,11 @@ type MerchantConnection {
   nodes: [Merchant!]!
 }
 
+type Mutation {
+  """Login to KidoFood"""
+  loginUser(email: String!, password: String!): User!
+}
+
 """The order status"""
 enum OrderStatus {
   PENDING

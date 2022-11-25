@@ -34,7 +34,7 @@ from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
 from internals.enums import AvatarType, UserType
 from internals.session.models import UserSession
-from internals.utils import to_uuid
+from internals.utils import make_uuid, to_uuid
 
 from .common import AvatarImage
 from .merchant import Merchant
@@ -50,6 +50,7 @@ class User:
     type: gql.enum(UserType, description="The user type") = gql.field(description="The user type")  # type: ignore
     avatar: Optional[AvatarImage] = gql.field(description="The user avatar")
     merchant_id: gql.Private[Optional[str]]
+    user_id: gql.Private[str]  # ObjectId
 
     @gql.field(description="The associated merchant information if type is MERCHANT")
     async def merchant(self) -> Optional[Merchant]:
@@ -76,6 +77,7 @@ class User:
             type=user.type,
             avatar=avatar,
             merchant_id=merchant_id,
+            user_id=str(user.id),
         )
 
     @classmethod
@@ -90,4 +92,19 @@ class User:
             type=user.type,
             avatar=avatar,
             merchant_id=user.merchant_info,
+            user_id=user.user_db,
+        )
+
+    def to_session(self):
+        return UserSession(
+            user_id=str(self.id),
+            name=self.name,
+            email=self.email,
+            type=self.type,
+            avatar=self.avatar.name if self.avatar else None,
+            merchant_info=self.merchant_id,
+            user_db=self.user_id,
+            remember_me=True,
+            remember_latch=False,
+            session_id=make_uuid(False),
         )

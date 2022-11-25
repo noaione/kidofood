@@ -24,7 +24,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Optional, Union, cast
 from uuid import UUID
 
 import strawberry as gql
@@ -32,6 +32,7 @@ from strawberry.types import Info
 
 from .context import KidoFoodContext
 from .models import Connection, FoodItem, FoodOrder, Merchant, User
+from .mutations import mutate_login_user
 from .resolvers import (
     Cursor,
     SortDirection,
@@ -49,9 +50,9 @@ __all__ = (
 )
 
 
-@gql.type
+@gql.type(description="Search for items on specific fields")
 class QuerySearch:
-    @gql.field
+    @gql.field(description="Search for merchants by name")
     async def merchants(
         self,
         query: str,
@@ -61,7 +62,7 @@ class QuerySearch:
     ) -> Connection[Merchant]:
         return await resolve_merchant_paginated(query=query, limit=limit, cursor=cursor, sort=sort)
 
-    @gql.field
+    @gql.field(description="Search for food items by name")
     async def items(
         self,
         query: str,
@@ -74,14 +75,14 @@ class QuerySearch:
 
 @gql.type
 class Query:
-    @gql.field
+    @gql.field(description="Get the current user")
     async def user(self, info: Info[KidoFoodContext, None]) -> User:
         if info.context.user is None:
             raise Exception("You are not logged in")
 
         return User.from_session(info.context.user)
 
-    @gql.field
+    @gql.field(description="Get single or multiple merchants")
     async def merchants(
         self,
         id: Optional[list[gql.ID]] = gql.UNSET,
@@ -91,7 +92,7 @@ class Query:
     ) -> Connection[Merchant]:
         return await resolve_merchant_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
 
-    @gql.field
+    @gql.field(description="Get single or multiple food items")
     async def items(
         self,
         id: Optional[list[gql.ID]] = gql.UNSET,
@@ -101,7 +102,7 @@ class Query:
     ) -> Connection[FoodItem]:
         return await resolve_food_items_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
 
-    @gql.field
+    @gql.field(description="Get single or multiple food orders")
     async def orders(
         self,
         id: Optional[list[gql.ID]] = gql.UNSET,
@@ -111,12 +112,22 @@ class Query:
     ) -> Connection[FoodOrder]:
         return await resolve_food_order_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
 
-    search: QuerySearch
+    search: QuerySearch = gql.field(description="Search for items on specific fields")
 
 
 @gql.type
 class Mutation:
-    pass
+    @gql.field(description="Login to KidoFood")
+    async def login_user(self, email: str, password: str, info: Info[KidoFoodContext, None]) -> User:
+        if info.context.user is not None:
+            raise Exception("You are already logged in")
+        success, user = await mutate_login_user(email, password)
+        if not success and not isinstance(user, User):
+            raise Exception(user)
+        user_info = cast(User, user)
+        info.context.session_latch = True
+        info.context.user = user_info.to_session()
+        return user_info
 
 
 @gql.type

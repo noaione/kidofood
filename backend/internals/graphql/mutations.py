@@ -23,3 +23,27 @@ SOFTWARE.
 """
 
 from __future__ import annotations
+
+from internals.db import User as UserDB
+from internals.session import verify_password
+
+from .models import User
+
+__all__ = ("mutate_login_user",)
+
+
+async def mutate_login_user(
+    email: str,
+    password: str,
+):
+    user = await UserDB.find_one(UserDB.email == email)
+    if not user:
+        return False, "User with associated email not found"
+
+    is_verify, new_password = await verify_password(password, user.password)
+    if not is_verify:
+        return False, "Password is not correct"
+    if new_password is not None and user is not None:
+        user.password = new_password
+        await user.save_changes()
+    return True, User.from_db(user)

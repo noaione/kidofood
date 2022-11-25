@@ -24,6 +24,9 @@ SOFTWARE.
 
 from __future__ import annotations
 
+import logging
+from typing import Optional
+
 from fastapi import Request, Response
 from fastapi.responses import PlainTextResponse
 from starlette import status
@@ -34,12 +37,19 @@ from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 
 from internals.responses import ORJSONXResponse
+from internals.session import SessionError, UserSession
+
+from .context import KidoFoodContext
 
 __all__ = ("KidoGraphQLRouter",)
 
+logger = logging.getLogger("GraphQL.Router")
+
 
 class KidoGraphQLRouter(GraphQLRouter):
-    async def execute_request(self, request: Request, response: Response, data: dict, context, root_value) -> Response:
+    async def execute_request(
+        self, request: Request, response: Response, data: dict, context: KidoFoodContext, root_value
+    ) -> Response:
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
@@ -78,5 +88,20 @@ class KidoGraphQLRouter(GraphQLRouter):
             status_code=status.HTTP_200_OK,
         )
         # -->
+        # <-- KidoFood: Add session updater using latch
+        if context.session_latch:
+            logging.info("Updating session because of latch is True")
+            if context.user is None:
+                cr_user: Optional[UserSession] = None
+                try:
+                    cr_user = await context.session(request)
+                except SessionError:
+                    # Ignore
+                    pass
+                    # Delete user session
+                if cr_user is not None:
+                    await context.session.remove_session(cr_user.session_id, actual_response)
+            else:
+                await context.session.set_session(context.user, actual_response)
 
         return self._merge_responses(response, actual_response)
