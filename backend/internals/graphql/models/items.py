@@ -48,7 +48,7 @@ class FoodItem:
     description: str = gql.field(description="The description of the item")
     price: float = gql.field(description="The price of the item")
     stock: int = gql.field(description="The stock of the item")
-    type: gql.enum(ItemType, description="The item type")  # type: ignore
+    type: gql.enum(ItemType, description="The item type") = gql.field(description="The item type")  # type: ignore
     created_at: datetime = gql.field(description="The creation time of the item")
     updated_at: datetime = gql.field(description="The last update time of the item")
     image: Optional[AvatarImage] = gql.field(description="The image of the item")

@@ -47,7 +47,7 @@ class User:
     id: UUID = gql.field(description="The ID of the User")
     name: str = gql.field(description="The client or user real name")
     email: str = gql.field(description="The client or user email")
-    type: gql.enum(UserType, description="The user type")  # type: ignore
+    type: gql.enum(UserType, description="The user type") = gql.field(description="The user type")  # type: ignore
     avatar: Optional[AvatarImage] = gql.field(description="The user avatar")
     merchant_id: gql.Private[Optional[str]]
 

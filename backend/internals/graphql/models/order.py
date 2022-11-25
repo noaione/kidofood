@@ -52,7 +52,9 @@ class FoodOrder:
     target_address: str = gql.field(description="The target address delivery of the order")
     created_at: datetime = gql.field(description="The creation time of the order")
     updated_at: datetime = gql.field(description="The last update time of the order")
-    status: gql.enum(OrderStatus, description="The order status")  # type: ignore
+    status: gql.enum(OrderStatus, description="The order status") = gql.field(  # type: ignore
+        description="The order status"
+    )
 
     item_ids: gql.Private[list[str]]  # a list of ObjectId(s)
     merchant_id: gql.Private[str]
