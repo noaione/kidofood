@@ -32,7 +32,7 @@ from strawberry.types import Info
 
 from .context import KidoFoodContext
 from .models import Connection, FoodItem, FoodOrder, Merchant, User
-from .mutations import mutate_login_user
+from .mutations import mutate_login_user, mutate_register_user
 from .resolvers import (
     Cursor,
     SortDirection,
@@ -48,6 +48,12 @@ __all__ = (
     "Subscription",
     "schema",
 )
+
+
+@gql.type(description="Simple result of mutation")
+class Result:
+    success: bool = gql.field(description="Success status")
+    message: Optional[str] = gql.field(description="Extra message if any, might be available if success is False")
 
 
 @gql.type(description="Search for items on specific fields")
@@ -115,18 +121,43 @@ class Query:
     search: QuerySearch = gql.field(description="Search for items on specific fields")
 
 
+UserResult = gql.union(
+    "UserResult", (Result, User), description="Either `User` if success or `Result` if failure detected"
+)
+
+
 @gql.type
 class Mutation:
     @gql.field(description="Login to KidoFood")
-    async def login_user(self, email: str, password: str, info: Info[KidoFoodContext, None]) -> User:
+    async def login_user(self, email: str, password: str, info: Info[KidoFoodContext, None]) -> UserResult:
         if info.context.user is not None:
-            raise Exception("You are already logged in")
+            return Result(success=False, message="You are already logged in")
         success, user = await mutate_login_user(email, password)
-        if not success and not isinstance(user, User):
-            raise Exception(user)
+        if not success and isinstance(user, str):
+            return Result(success=False, message=user)
         user_info = cast(User, user)
         info.context.session_latch = True
         info.context.user = user_info.to_session()
+        return user_info
+
+    @gql.field(description="Logout from KidoFood")
+    async def logout_user(self, info: Info[KidoFoodContext, None]) -> Result:
+        if info.context.user is None:
+            return Result(success=False, message="You are not logged in")
+        info.context.session_latch = True
+        info.context.user = None
+        return Result(success=True, message=None)
+
+    @gql.field(description="Register to KidoFood")
+    async def register_user(
+        self, email: str, password: str, name: str, info: Info[KidoFoodContext, None]
+    ) -> UserResult:
+        if info.context.user is not None:
+            raise Exception("Please logout first before registering as new user")
+        success, user = await mutate_register_user(email, password, name)
+        if not success and isinstance(user, str):
+            return Result(success=False, message=user)
+        user_info = cast(User, user)
         return user_info
 
 

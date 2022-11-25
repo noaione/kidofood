@@ -24,12 +24,16 @@ SOFTWARE.
 
 from __future__ import annotations
 
+from internals.db import AvatarImage
 from internals.db import User as UserDB
-from internals.session import verify_password
+from internals.session import encrypt_password, verify_password
 
 from .models import User
 
-__all__ = ("mutate_login_user",)
+__all__ = (
+    "mutate_login_user",
+    "mutate_register_user",
+)
 
 
 async def mutate_login_user(
@@ -47,3 +51,18 @@ async def mutate_login_user(
         user.password = new_password
         await user.save_changes()
     return True, User.from_db(user)
+
+
+async def mutate_register_user(
+    email: str,
+    password: str,
+    name: str,
+):
+    user = await UserDB.find_one(UserDB.email == email)
+    if user:
+        return False, "User with associated email already exists"
+
+    hash_paas = await encrypt_password(password)
+    new_user = UserDB(email=email, password=hash_paas, name=name, avatar=AvatarImage())
+    await new_user.insert()
+    return True, new_user

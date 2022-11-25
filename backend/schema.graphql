@@ -145,7 +145,13 @@ type MerchantConnection {
 
 type Mutation {
   """Login to KidoFood"""
-  loginUser(email: String!, password: String!): User!
+  loginUser(email: String!, password: String!): UserResult!
+
+  """Logout from KidoFood"""
+  logoutUser: Result!
+
+  """Register to KidoFood"""
+  registerUser(email: String!, password: String!, name: String!): UserResult!
 }
 
 """The order status"""
@@ -203,6 +209,15 @@ type QuerySearch {
   items(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodItemConnection!
 }
 
+"""Simple result of mutation"""
+type Result {
+  """Success status"""
+  success: Boolean!
+
+  """Extra message if any, might be available if success is False"""
+  message: String
+}
+
 """The sort direction for pagination"""
 enum SortDirection {
   ASC
@@ -231,6 +246,9 @@ type User {
   """The associated merchant information if type is MERCHANT"""
   merchant: Merchant
 }
+
+"""Either `User` if success or `Result` if failure detected"""
+union UserResult = Result | User
 
 """The user type"""
 enum UserType {
