@@ -43,6 +43,7 @@ class Merchant:
     id: UUID = gql.field(description="The ID of the merchant")
     name: str = gql.field(description="The name of the merchant")
     description: str = gql.field(description="The description of the merchant")
+    address: str = gql.field(description="The address of the merchant")
     created_at: datetime = gql.field(description="The creation time of the merchant")
     updated_at: datetime = gql.field(description="The last update time of the merchant")
     avatar: Optional[AvatarImage] = gql.field(description="The avatar of the merchant")
@@ -59,6 +60,7 @@ class Merchant:
             id=merch.merchant_id,
             name=merch.name,
             description=merch.description,
+            address=merch.address,
             created_at=merch.created_at,
             updated_at=merch.updated_at,
             avatar=avatar,

@@ -110,6 +110,9 @@ type Merchant {
   """The description of the merchant"""
   description: String!
 
+  """The address of the merchant"""
+  address: String!
+
   """The creation time of the merchant"""
   createdAt: DateTime!
 
