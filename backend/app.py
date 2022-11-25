@@ -160,7 +160,7 @@ graphql_app = KidoGraphQLRouter(
     context_getter=get_context,
 )
 app.include_router(router)
-app.include_router(graphql_app, prefix="/graphql")
+app.include_router(graphql_app, prefix="/graphql", include_in_schema=False)
 
 
 @app.get("/", include_in_schema=False)
