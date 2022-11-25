@@ -25,13 +25,13 @@ SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Type
 from uuid import UUID
 
 import strawberry as gql
 
 from internals.db import Merchant as MerchantModel
-from internals.enums import AvatarType
+from internals.enums import ApprovalStatus, AvatarType
 
 from .common import AvatarImage
 
@@ -46,13 +46,16 @@ class Merchant:
     address: str = gql.field(description="The address of the merchant")
     created_at: datetime = gql.field(description="The creation time of the merchant")
     updated_at: datetime = gql.field(description="The last update time of the merchant")
+    approved: gql.enum(ApprovalStatus, description="The approval status of an entity") = gql.field(  # type: ignore
+        description="The approval status of the merchant"
+    )
     avatar: Optional[AvatarImage] = gql.field(description="The avatar of the merchant")
     phone: Optional[str] = gql.field(description="The phone number of the merchant")
     email: Optional[str] = gql.field(description="The email of the merchant")
     website: Optional[str] = gql.field(description="The website of the merchant")
 
     @classmethod
-    def from_db(cls, merch: MerchantModel):
+    def from_db(cls: Type[Merchant], merch: MerchantModel):
         avatar = None  # type: Optional[AvatarImage]
         if merch.avatar and merch.avatar.key:
             avatar = AvatarImage.from_db(merch.avatar, AvatarType.MERCHANT)
@@ -63,6 +66,7 @@ class Merchant:
             address=merch.address,
             created_at=merch.created_at,
             updated_at=merch.updated_at,
+            approved=merch.approved,
             avatar=avatar,
             phone=merch.phone,
             email=merch.email,

@@ -28,6 +28,7 @@ from enum import Enum
 
 __all__ = (
     "ItemType",
+    "ApprovalStatus",
     "UserType",
     "OrderStatus",
     "AvatarType",
@@ -38,6 +39,12 @@ class ItemType(str, Enum):
     DRINK = "drink"
     MEAL = "meal"
     PACKAGE = "package"
+
+
+class ApprovalStatus(str, Enum):
+    APPROVED = "approved"
+    PENDING = "pending"
+    REJECTED = "rejected"
 
 
 class UserType(int, Enum):

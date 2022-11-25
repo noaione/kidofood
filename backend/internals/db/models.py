@@ -31,7 +31,7 @@ from beanie import Document, Link
 from pendulum.datetime import DateTime
 from pydantic import BaseModel, Field
 
-from internals.enums import ItemType, OrderStatus, UserType
+from internals.enums import ApprovalStatus, ItemType, OrderStatus, UserType
 
 from ._doc import _coerce_to_pendulum, pendulum_utc
 
@@ -57,6 +57,7 @@ class Merchant(Document):
 
     # S3 key
     avatar: AvatarImage = Field(default_factory=AvatarImage)
+    approved: ApprovalStatus = ApprovalStatus.PENDING
 
     phone: Optional[str]
     email: Optional[str]

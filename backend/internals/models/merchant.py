@@ -25,12 +25,12 @@ SOFTWARE.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Type
 
 from pendulum.datetime import DateTime
 
 from internals.db import Merchant as MerchantDB
-from internals.enums import AvatarType
+from internals.enums import ApprovalStatus, AvatarType
 
 from .common import AvatarResponse, PartialIDName, _coerce_to_pendulum, pendulum_utc
 
@@ -44,6 +44,8 @@ class MerchantResponse(PartialIDName):
 
     created_at: DateTime = field(default_factory=pendulum_utc)
     updated_at: DateTime = field(default_factory=pendulum_utc)
+
+    approved: ApprovalStatus = ApprovalStatus.PENDING
 
     # Optional stuff
     avatar: Optional[AvatarResponse] = field(default=None)
@@ -60,7 +62,7 @@ class MerchantResponse(PartialIDName):
             self.updated_at = cc_ut
 
     @classmethod
-    def from_db(cls, merchant: MerchantDB):
+    def from_db(cls: Type[MerchantResponse], merchant: MerchantDB):
         avatar = None
         if merchant.avatar and merchant.avatar.key:
             avatar = AvatarResponse.from_db(merchant.avatar, AvatarType.ITEMS)
@@ -75,4 +77,5 @@ class MerchantResponse(PartialIDName):
             website=merchant.website,
             created_at=merchant.created_at,
             updated_at=merchant.updated_at,
+            approved=merchant.approved,
         )
