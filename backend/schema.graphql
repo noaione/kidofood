@@ -173,15 +173,28 @@ type PageInfo {
 }
 
 type Query {
+  """Search for items on specific fields"""
   search: QuerySearch!
+
+  """Get the current user"""
   user: User!
+
+  """Get single or multiple merchants"""
   merchants(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): MerchantConnection!
+
+  """Get single or multiple food items"""
   items(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodItemConnection!
+
+  """Get single or multiple food orders"""
   orders(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodOrderConnection!
 }
 
+"""Search for items on specific fields"""
 type QuerySearch {
+  """Search for merchants by name"""
   merchants(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): MerchantConnection!
+
+  """Search for food items by name"""
   items(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodItemConnection!
 }
 
@@ -191,6 +204,7 @@ enum SortDirection {
   DESC
 }
 
+"""An UUID4 formatted string"""
 scalar UUID
 
 type User {
