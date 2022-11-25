@@ -33,13 +33,13 @@ import strawberry as gql
 from internals.db import Merchant as MerchantModel
 from internals.enums import ApprovalStatus, AvatarType
 
-from .common import AvatarImage
+from .common import AvatarImageGQL
 
-__all__ = ("Merchant",)
+__all__ = ("MerchantGQL",)
 
 
-@gql.type
-class Merchant:
+@gql.type(name="Merchant", description="Merchant model")
+class MerchantGQL:
     id: UUID = gql.field(description="The ID of the merchant")
     name: str = gql.field(description="The name of the merchant")
     description: str = gql.field(description="The description of the merchant")
@@ -49,16 +49,16 @@ class Merchant:
     approved: gql.enum(ApprovalStatus, description="The approval status of an entity") = gql.field(  # type: ignore
         description="The approval status of the merchant"
     )
-    avatar: Optional[AvatarImage] = gql.field(description="The avatar of the merchant")
+    avatar: Optional[AvatarImageGQL] = gql.field(description="The avatar of the merchant")
     phone: Optional[str] = gql.field(description="The phone number of the merchant")
     email: Optional[str] = gql.field(description="The email of the merchant")
     website: Optional[str] = gql.field(description="The website of the merchant")
 
     @classmethod
-    def from_db(cls: Type[Merchant], merch: MerchantModel):
-        avatar = None  # type: Optional[AvatarImage]
+    def from_db(cls: Type[MerchantGQL], merch: MerchantModel):
+        avatar = None  # type: Optional[AvatarImageGQL]
         if merch.avatar and merch.avatar.key:
-            avatar = AvatarImage.from_db(merch.avatar, AvatarType.MERCHANT)
+            avatar = AvatarImageGQL.from_db(merch.avatar, AvatarType.MERCHANT)
         return cls(
             id=merch.merchant_id,
             name=merch.name,

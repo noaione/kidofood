@@ -28,7 +28,7 @@ from enum import Enum
 from typing import Optional, Union
 
 import strawberry as gql
-from beanie.operators import In as OpIn
+from beanie.operators import Eq as OpEq, In as OpIn
 from beanie.operators import RegEx as OpRegEx
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -36,12 +36,14 @@ from bson.errors import InvalidId
 from internals.db import FoodItem as FoodItemDB
 from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
+from internals.db import User as UserDB
 
-from .models import Connection, FoodItem, FoodOrder, Merchant, PageInfo
+from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, PageInfo, UserGQL
 
 __all__ = (
     "Cursor",
     "SortDirection",
+    "resolve_user_from_db",
     "resolve_merchant_paginated",
     "resolve_food_items_paginated",
     "resolve_food_order_paginated",
@@ -105,13 +107,22 @@ def query_or_ids(
     raise ValueError("Query and ids are mutually exclusive")
 
 
+async def resolve_user_from_db(
+    user: UserGQL,
+) -> UserDB:
+    find_match = await UserDB.find_one(OpEq(UserDB.user_id, user.id))
+    if find_match is None:
+        raise Exception("User not found")
+    return find_match
+
+
 async def resolve_merchant_paginated(
     id: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
     query: Optional[str] = gql.UNSET,
     limit: int = 20,
     cursor: Optional[Cursor] = gql.UNSET,
     sort: SortDirection = SortDirection.ASC,
-) -> Connection[Merchant]:
+) -> Connection[MerchantGQL]:
     act_limit = limit + 1
     direction = "-" if sort is SortDirection.DESCENDING else "+"
 
@@ -155,7 +166,7 @@ async def resolve_merchant_paginated(
     next_cursor = last_item.id if last_item is not None else None
     has_next_page = next_cursor is not None
 
-    mapped_items = [Merchant.from_db(item) for item in items]
+    mapped_items = [MerchantGQL.from_db(item) for item in items]
 
     return Connection(
         count=len(mapped_items),
@@ -175,7 +186,7 @@ async def resolve_food_items_paginated(
     limit: int = 20,
     cursor: Optional[Cursor] = gql.UNSET,
     sort: SortDirection = SortDirection.ASC,
-) -> Connection[FoodItem]:
+) -> Connection[FoodItemGQL]:
     act_limit = limit + 1
     direction = "-" if sort is SortDirection.DESCENDING else "+"
 
@@ -219,7 +230,7 @@ async def resolve_food_items_paginated(
     next_cursor = last_item.id if last_item is not None else None
     has_next_page = next_cursor is not None
 
-    mapped_items = [FoodItem.from_db(item) for item in items]
+    mapped_items = [FoodItemGQL.from_db(item) for item in items]
 
     return Connection(
         count=len(mapped_items),
@@ -238,7 +249,7 @@ async def resolve_food_order_paginated(
     limit: int = 20,
     cursor: Optional[Cursor] = gql.UNSET,
     sort: SortDirection = SortDirection.ASC,
-) -> Connection[FoodOrder]:
+) -> Connection[FoodOrderGQL]:
     act_limit = limit + 1
     direction = "-" if sort is SortDirection.DESCENDING else "+"
 
@@ -279,7 +290,7 @@ async def resolve_food_order_paginated(
     next_cursor = last_item.id if last_item is not None else None
     has_next_page = next_cursor is not None
 
-    mapped_items = [FoodOrder.from_db(item) for item in items]
+    mapped_items = [FoodOrderGQL.from_db(item) for item in items]
 
     return Connection(
         count=len(mapped_items),

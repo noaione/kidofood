@@ -29,7 +29,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from internals.db.models import User, UserType
+from internals.db.models import Merchant, User, UserType
 from internals.utils import make_uuid
 
 __all__ = (
@@ -81,7 +81,10 @@ class UserSession(PartialUserSession):
     def from_db(cls, user: User, remember: bool = False):
         merchant_id: Optional[str] = None
         if user.merchant is not None:
-            merchant_id = str(user.merchant.ref.id)
+            if isinstance(user.merchant, Merchant):
+                merchant_id = str(user.merchant.id)
+            else:
+                merchant_id = str(user.merchant.ref.id)
         avatar = None
         if user.avatar and user.avatar.key:
             avatar = f"{user.avatar.key}.{user.avatar.format}"

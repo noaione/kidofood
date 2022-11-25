@@ -26,16 +26,22 @@ from __future__ import annotations
 
 from typing import Optional, Union, cast
 from uuid import UUID
+from fastapi import UploadFile
 
 import strawberry as gql
 from strawberry.types import Info
+from strawberry.file_uploads import Upload
+
+from internals.db import Merchant as MerchantDB
+from internals.session import UserSession
 
 from .context import KidoFoodContext
-from .models import Connection, FoodItem, FoodOrder, Merchant, User
-from .mutations import mutate_login_user, mutate_register_user
+from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, UserGQL
+from .mutations import mutate_login_user, mutate_register_user, mutate_apply_new_merchant
 from .resolvers import (
     Cursor,
     SortDirection,
+    resolve_user_from_db,
     resolve_food_items_paginated,
     resolve_food_order_paginated,
     resolve_merchant_paginated,
@@ -65,7 +71,7 @@ class QuerySearch:
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
-    ) -> Connection[Merchant]:
+    ) -> Connection[MerchantGQL]:
         return await resolve_merchant_paginated(query=query, limit=limit, cursor=cursor, sort=sort)
 
     @gql.field(description="Search for food items by name")
@@ -75,18 +81,19 @@ class QuerySearch:
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
-    ) -> Connection[FoodItem]:
+    ) -> Connection[FoodItemGQL]:
         return await resolve_food_items_paginated(query=query, limit=limit, cursor=cursor, sort=sort)
 
 
 @gql.type
 class Query:
     @gql.field(description="Get the current user")
-    async def user(self, info: Info[KidoFoodContext, None]) -> User:
+    async def user(self, info: Info[KidoFoodContext, None]) -> UserGQL:
         if info.context.user is None:
             raise Exception("You are not logged in")
 
-        return User.from_session(info.context.user)
+        user = await resolve_user_from_db(UserGQL.from_session(info.context.user))
+        return UserGQL.from_db(user)
 
     @gql.field(description="Get single or multiple merchants")
     async def merchants(
@@ -95,7 +102,7 @@ class Query:
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
-    ) -> Connection[Merchant]:
+    ) -> Connection[MerchantGQL]:
         return await resolve_merchant_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
 
     @gql.field(description="Get single or multiple food items")
@@ -105,7 +112,7 @@ class Query:
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
-    ) -> Connection[FoodItem]:
+    ) -> Connection[FoodItemGQL]:
         return await resolve_food_items_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
 
     @gql.field(description="Get single or multiple food orders")
@@ -115,14 +122,17 @@ class Query:
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
-    ) -> Connection[FoodOrder]:
+    ) -> Connection[FoodOrderGQL]:
         return await resolve_food_order_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
 
     search: QuerySearch = gql.field(description="Search for items on specific fields")
 
 
 UserResult = gql.union(
-    "UserResult", (Result, User), description="Either `User` if success or `Result` if failure detected"
+    "UserResult", (Result, UserGQL), description="Either `User` if success or `Result` if failure detected"
+)
+MerchantResult = gql.union(
+    "MerchantResult", (Result, MerchantGQL), description="Either `Merchant` if success or `Result` if failure detected"
 )
 
 
@@ -135,7 +145,7 @@ class Mutation:
         success, user = await mutate_login_user(email, password)
         if not success and isinstance(user, str):
             return Result(success=False, message=user)
-        user_info = cast(User, user)
+        user_info = cast(UserGQL, user)
         info.context.session_latch = True
         info.context.user = user_info.to_session()
         return user_info
@@ -157,8 +167,35 @@ class Mutation:
         success, user = await mutate_register_user(email, password, name)
         if not success and isinstance(user, str):
             return Result(success=False, message=user)
-        user_info = cast(User, user)
+        user_info = cast(UserGQL, user)
         return user_info
+
+    @gql.mutation(description="Apply for merchant")
+    async def apply_merchant(
+        self,
+        info: Info[KidoFoodContext, None],
+        name: str,
+        description: str,
+        address: str,
+        avatar: Optional[Upload] = gql.UNSET,
+    ) -> MerchantResult:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+        user = UserGQL.from_session(info.context.user)
+        # Process avatar upload
+        ava_bytes = cast(Optional[UploadFile], avatar if avatar is not gql.UNSET else None)
+        if ava_bytes is not None:
+            pass
+        is_success, merchant, userchange = await mutate_apply_new_merchant(
+            user=user, name=name, description=description, address=address, avatar=None
+        )
+        if not is_success and isinstance(merchant, str):
+            return Result(success=False, message=merchant)
+        if userchange is not None:
+            user_data = UserSession.from_db(userchange, True)
+            info.context.session_latch = True
+            info.context.user = user_data
+        return MerchantGQL.from_db(cast(MerchantDB, merchant))
 
 
 @gql.type

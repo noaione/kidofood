@@ -36,40 +36,40 @@ from internals.enums import AvatarType, UserType
 from internals.session.models import UserSession
 from internals.utils import make_uuid, to_uuid
 
-from .common import AvatarImage
-from .merchant import Merchant
+from .common import AvatarImageGQL
+from .merchant import MerchantGQL
 
-__all__ = ("User",)
+__all__ = ("UserGQL",)
 
 
-@gql.type
-class User:
+@gql.type(name="User", description="User model")
+class UserGQL:
     id: UUID = gql.field(description="The ID of the User")
     name: str = gql.field(description="The client or user real name")
     email: str = gql.field(description="The client or user email")
     type: gql.enum(UserType, description="The user type") = gql.field(description="The user type")  # type: ignore
-    avatar: Optional[AvatarImage] = gql.field(description="The user avatar")
+    avatar: Optional[AvatarImageGQL] = gql.field(description="The user avatar")
     merchant_id: gql.Private[Optional[str]]
     user_id: gql.Private[str]  # ObjectId
 
     @gql.field(description="The associated merchant information if type is MERCHANT")
-    async def merchant(self) -> Optional[Merchant]:
+    async def merchant(self) -> Optional[MerchantGQL]:
         # Resolve merchant
         if self.merchant_id is None:
             return None
         merchant = await MerchantDB.find_one(MerchantDB.id == ObjectId(self.merchant_id))
         if merchant is None:
             return None
-        return Merchant.from_db(merchant)
+        return MerchantGQL.from_db(merchant)
 
     @classmethod
     def from_db(cls, user: UserDB):
         merchant_id = None  # type: Optional[str]
         if user.merchant is not None:
             merchant_id = str(user.merchant.ref.id)
-        avatar = None  # type: Optional[AvatarImage]
+        avatar = None  # type: Optional[AvatarImageGQL]
         if user.avatar and user.avatar.key:
-            avatar = AvatarImage.from_db(user.avatar, AvatarType.USERS)
+            avatar = AvatarImageGQL.from_db(user.avatar, AvatarType.USERS)
         return cls(
             id=user.user_id,
             name=user.name,
@@ -82,9 +82,9 @@ class User:
 
     @classmethod
     def from_session(cls, user: UserSession):
-        avatar = None  # type: Optional[AvatarImage]
+        avatar = None  # type: Optional[AvatarImageGQL]
         if user.avatar:
-            avatar = AvatarImage(name=user.avatar, type=AvatarType.USERS)
+            avatar = AvatarImageGQL(name=user.avatar, type=AvatarType.USERS)
         return cls(
             id=to_uuid(user.user_id),
             name=user.name,

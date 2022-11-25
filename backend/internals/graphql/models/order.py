@@ -38,15 +38,15 @@ from internals.db import Merchant as MerchantModel
 from internals.db import User as UserModel
 from internals.enums import OrderStatus
 
-from .items import FoodItem
-from .merchant import Merchant
-from .user import User
+from .items import FoodItemGQL
+from .merchant import MerchantGQL
+from .user import UserGQL
 
-__all__ = ("FoodOrder",)
+__all__ = ("FoodOrderGQL",)
 
 
-@gql.type
-class FoodOrder:
+@gql.type(name="FoodOrder", description="Food/Item order model")
+class FoodOrderGQL:
     id: UUID = gql.field(description="The ID of the order")
     total: float = gql.field(description="The total price of the order")
     target_address: str = gql.field(description="The target address delivery of the order")
@@ -61,26 +61,26 @@ class FoodOrder:
     user_id: gql.Private[str]
 
     @gql.field(description="The list of associated items for the order")
-    async def items(self) -> list[FoodItem]:
+    async def items(self) -> list[FoodItemGQL]:
         # Resolve items
         object_ids = [ObjectId(item_id) for item_id in self.item_ids]
         items = await FoodItemModel.find(OpIn(FoodItemModel.id, object_ids)).to_list()
-        return [FoodItem.from_db(item) for item in items]
+        return [FoodItemGQL.from_db(item) for item in items]
 
     @gql.field(description="The associated merchant for the order")
-    async def merchant(self) -> Optional[Merchant]:
+    async def merchant(self) -> Optional[MerchantGQL]:
         # Resolve merchant
         merchant = await MerchantModel.find_one(MerchantModel.id == ObjectId(self.merchant_id))
-        return Merchant.from_db(merchant) if merchant else None
+        return MerchantGQL.from_db(merchant) if merchant else None
 
     @gql.field(description="The associated user for the order")
-    async def user(self) -> Optional[User]:
+    async def user(self) -> Optional[UserGQL]:
         # Resolve user
         user = await UserModel.find_one(UserModel.id == ObjectId(self.user_id))
-        return User.from_db(user) if user else None
+        return UserGQL.from_db(user) if user else None
 
     @classmethod
-    def from_db(cls, data: FoodOrderModel) -> FoodOrder:
+    def from_db(cls, data: FoodOrderModel) -> FoodOrderGQL:
         return cls(
             id=data.order_id,
             total=data.total,

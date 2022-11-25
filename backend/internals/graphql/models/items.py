@@ -35,14 +35,14 @@ from internals.db import FoodItem as FoodItemModel
 from internals.db import Merchant as MerchantModel
 from internals.enums import AvatarType, ItemType
 
-from .common import AvatarImage
-from .merchant import Merchant
+from .common import AvatarImageGQL
+from .merchant import MerchantGQL
 
-__all__ = ("FoodItem",)
+__all__ = ("FoodItemGQL",)
 
 
-@gql.type
-class FoodItem:
+@gql.type(name="FoodItem", description="Food/Item model")
+class FoodItemGQL:
     id: UUID = gql.field(description="The ID of the item")
     name: str = gql.field(description="The name of the item")
     description: str = gql.field(description="The description of the item")
@@ -51,25 +51,25 @@ class FoodItem:
     type: gql.enum(ItemType, description="The item type") = gql.field(description="The item type")  # type: ignore
     created_at: datetime = gql.field(description="The creation time of the item")
     updated_at: datetime = gql.field(description="The last update time of the item")
-    image: Optional[AvatarImage] = gql.field(description="The image of the item")
+    image: Optional[AvatarImageGQL] = gql.field(description="The image of the item")
 
     merchant_id: gql.Private[Optional[str]]
 
     @gql.field(description="The associated merchant for the item")
-    async def merchant(self) -> Optional[Merchant]:
+    async def merchant(self) -> Optional[MerchantGQL]:
         # Resolve merchant
         if self.merchant_id is None:
             return None
         merchant = await MerchantModel.find_one(MerchantModel.id == ObjectId(self.merchant_id))
         if merchant is None:
             return None
-        return Merchant.from_db(merchant)
+        return MerchantGQL.from_db(merchant)
 
     @classmethod
     def from_db(cls, data: FoodItemModel):
-        avatar = None  # type: Optional[AvatarImage]
+        avatar = None  # type: Optional[AvatarImageGQL]
         if data.avatar and data.avatar.key:
-            avatar = AvatarImage.from_db(data.avatar, AvatarType.ITEMS)
+            avatar = AvatarImageGQL.from_db(data.avatar, AvatarType.ITEMS)
         merchant_id = None  # type: Optional[str]
         if data.merchant is not None:
             merchant_id = str(data.merchant.ref.id)
