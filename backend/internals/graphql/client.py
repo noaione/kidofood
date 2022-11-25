@@ -128,7 +128,7 @@ UserResult = gql.union(
 
 @gql.type
 class Mutation:
-    @gql.field(description="Login to KidoFood")
+    @gql.mutation(description="Login to KidoFood")
     async def login_user(self, email: str, password: str, info: Info[KidoFoodContext, None]) -> UserResult:
         if info.context.user is not None:
             return Result(success=False, message="You are already logged in")
@@ -140,7 +140,7 @@ class Mutation:
         info.context.user = user_info.to_session()
         return user_info
 
-    @gql.field(description="Logout from KidoFood")
+    @gql.mutation(description="Logout from KidoFood")
     async def logout_user(self, info: Info[KidoFoodContext, None]) -> Result:
         if info.context.user is None:
             return Result(success=False, message="You are not logged in")
@@ -148,7 +148,7 @@ class Mutation:
         info.context.user = None
         return Result(success=True, message=None)
 
-    @gql.field(description="Register to KidoFood")
+    @gql.mutation(description="Register to KidoFood")
     async def register_user(
         self, email: str, password: str, name: str, info: Info[KidoFoodContext, None]
     ) -> UserResult:
