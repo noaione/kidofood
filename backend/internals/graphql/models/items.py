@@ -33,8 +33,9 @@ from bson import ObjectId
 
 from internals.db import FoodItem as FoodItemModel
 from internals.db import Merchant as MerchantModel
-from internals.enums import AvatarType, ItemType
+from internals.enums import AvatarType
 
+from ..enums import ItemTypeGQL
 from .common import AvatarImageGQL
 from .merchant import MerchantGQL
 
@@ -48,7 +49,7 @@ class FoodItemGQL:
     description: str = gql.field(description="The description of the item")
     price: float = gql.field(description="The price of the item")
     stock: int = gql.field(description="The stock of the item")
-    type: gql.enum(ItemType, description="The item type") = gql.field(description="The item type")  # type: ignore
+    type: ItemTypeGQL = gql.field(description="The item type")  # type: ignore
     created_at: datetime = gql.field(description="The creation time of the item")
     updated_at: datetime = gql.field(description="The last update time of the item")
     image: Optional[AvatarImageGQL] = gql.field(description="The image of the item")

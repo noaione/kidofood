@@ -36,6 +36,7 @@ from internals.db import Merchant as MerchantDB
 from internals.session import UserSession
 
 from .context import KidoFoodContext
+from .enums import ApprovalStatusGQL
 from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, UserGQL
 from .mutations import mutate_apply_new_merchant, mutate_login_user, mutate_register_user
 from .resolvers import (
@@ -71,8 +72,9 @@ class QuerySearch:
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
+        status: list[ApprovalStatusGQL] = [ApprovalStatusGQL.APPROVED],
     ) -> Connection[MerchantGQL]:
-        return await resolve_merchant_paginated(query=query, limit=limit, cursor=cursor, sort=sort)
+        return await resolve_merchant_paginated(query=query, limit=limit, cursor=cursor, sort=sort, status=status)
 
     @gql.field(description="Search for food items by name")
     async def items(
@@ -102,8 +104,9 @@ class Query:
         limit: int = 20,
         cursor: Optional[Cursor] = gql.UNSET,
         sort: SortDirection = SortDirection.ASC,
+        status: list[ApprovalStatusGQL] = [ApprovalStatusGQL.APPROVED],
     ) -> Connection[MerchantGQL]:
-        return await resolve_merchant_paginated(id=id, limit=limit, cursor=cursor, sort=sort)
+        return await resolve_merchant_paginated(id=id, limit=limit, cursor=cursor, sort=sort, status=status)
 
     @gql.field(description="Get single or multiple food items")
     async def items(

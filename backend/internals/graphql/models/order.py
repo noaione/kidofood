@@ -36,8 +36,8 @@ from internals.db import FoodItem as FoodItemModel
 from internals.db import FoodOrder as FoodOrderModel
 from internals.db import Merchant as MerchantModel
 from internals.db import User as UserModel
-from internals.enums import OrderStatus
 
+from ..enums import OrderStatusGQL
 from .items import FoodItemGQL
 from .merchant import MerchantGQL
 from .user import UserGQL
@@ -52,9 +52,7 @@ class FoodOrderGQL:
     target_address: str = gql.field(description="The target address delivery of the order")
     created_at: datetime = gql.field(description="The creation time of the order")
     updated_at: datetime = gql.field(description="The last update time of the order")
-    status: gql.enum(OrderStatus, description="The order status") = gql.field(  # type: ignore
-        description="The order status"
-    )
+    status: OrderStatusGQL = gql.field(description="The order status")
 
     item_ids: gql.Private[list[str]]  # a list of ObjectId(s)
     merchant_id: gql.Private[str]

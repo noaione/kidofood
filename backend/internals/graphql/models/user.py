@@ -32,10 +32,11 @@ from bson import ObjectId
 
 from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
-from internals.enums import AvatarType, UserType
+from internals.enums import AvatarType
 from internals.session.models import UserSession
 from internals.utils import make_uuid, to_uuid
 
+from ..enums import UserTypeGQL
 from .common import AvatarImageGQL
 from .merchant import MerchantGQL
 
@@ -47,7 +48,7 @@ class UserGQL:
     id: UUID = gql.field(description="The ID of the User")
     name: str = gql.field(description="The client or user real name")
     email: str = gql.field(description="The client or user email")
-    type: gql.enum(UserType, description="The user type") = gql.field(description="The user type")  # type: ignore
+    type: UserTypeGQL = gql.field(description="The user type")
     avatar: Optional[AvatarImageGQL] = gql.field(description="The user avatar")
     merchant_id: gql.Private[Optional[str]]
     user_id: gql.Private[str]  # ObjectId

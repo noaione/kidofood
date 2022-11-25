@@ -1,4 +1,4 @@
-"""The approval status of an entity"""
+"""The merchant approval status"""
 enum ApprovalStatus {
   APPROVED
   PENDING
@@ -210,7 +210,7 @@ type Query {
   user: User!
 
   """Get single or multiple merchants"""
-  merchants(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): MerchantConnection!
+  merchants(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC, status: [ApprovalStatus!]! = [APPROVED]): MerchantConnection!
 
   """Get single or multiple food items"""
   items(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodItemConnection!
@@ -222,7 +222,7 @@ type Query {
 """Search for items on specific fields"""
 type QuerySearch {
   """Search for merchants by name"""
-  merchants(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): MerchantConnection!
+  merchants(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC, status: [ApprovalStatus!]! = [APPROVED]): MerchantConnection!
 
   """Search for food items by name"""
   items(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodItemConnection!

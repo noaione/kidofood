@@ -31,8 +31,9 @@ from uuid import UUID
 import strawberry as gql
 
 from internals.db import Merchant as MerchantModel
-from internals.enums import ApprovalStatus, AvatarType
+from internals.enums import AvatarType
 
+from ..enums import ApprovalStatusGQL
 from .common import AvatarImageGQL
 
 __all__ = ("MerchantGQL",)
@@ -46,9 +47,7 @@ class MerchantGQL:
     address: str = gql.field(description="The address of the merchant")
     created_at: datetime = gql.field(description="The creation time of the merchant")
     updated_at: datetime = gql.field(description="The last update time of the merchant")
-    approved: gql.enum(ApprovalStatus, description="The approval status of an entity") = gql.field(  # type: ignore
-        description="The approval status of the merchant"
-    )
+    approved: ApprovalStatusGQL = gql.field(description="The approval status of the merchant")
     avatar: Optional[AvatarImageGQL] = gql.field(description="The avatar of the merchant")
     phone: Optional[str] = gql.field(description="The phone number of the merchant")
     email: Optional[str] = gql.field(description="The email of the merchant")

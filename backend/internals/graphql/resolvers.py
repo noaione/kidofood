@@ -39,6 +39,7 @@ from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
 
+from .enums import ApprovalStatusGQL
 from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, PageInfo, UserGQL
 
 __all__ = (
@@ -123,6 +124,11 @@ async def resolve_merchant_paginated(
     limit: int = 20,
     cursor: Optional[Cursor] = gql.UNSET,
     sort: SortDirection = SortDirection.ASC,
+    status: list[ApprovalStatusGQL] = [
+        ApprovalStatusGQL.APPROVED,
+        ApprovalStatusGQL.PENDING,
+        ApprovalStatusGQL.REJECTED,
+    ],
 ) -> Connection[MerchantGQL]:
     act_limit = limit + 1
     direction = "-" if sort is SortDirection.DESCENDING else "+"
@@ -131,6 +137,7 @@ async def resolve_merchant_paginated(
     cursor_id = parse_cursor(cursor)
 
     items_args = []
+    items_args.append(OpIn(MerchantDB.approved, status))
     added_query_id = False
     if isinstance(ids_set, list) and len(ids_set) > 0:
         items_args.append(OpIn(MerchantDB.id, ids_set))
@@ -157,7 +164,7 @@ async def resolve_merchant_paginated(
         )
 
     if added_query_id:
-        items_count = await MerchantDB.find(items_args[0]).count()
+        items_count = await MerchantDB.find(*items_args[0:2]).count()
     else:
         items_count = await MerchantDB.find().count()
 
