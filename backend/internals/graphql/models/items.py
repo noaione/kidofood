@@ -32,10 +32,10 @@ import strawberry as gql
 from bson import ObjectId
 
 from internals.db import FoodItem as FoodItemModel
-from internals.db import ItemType
 from internals.db import Merchant as MerchantModel
+from internals.enums import AvatarType, ItemType
 
-from .common import AvatarImage, AvatarType
+from .common import AvatarImage
 from .merchant import Merchant
 
 __all__ = ("FoodItem",)
@@ -43,19 +43,19 @@ __all__ = ("FoodItem",)
 
 @gql.type
 class FoodItem:
-    id: UUID
-    name: str
-    description: str
-    price: float
-    stock: int
-    type: ItemType
-    created_at: datetime
-    updated_at: datetime
-    image: Optional[AvatarImage]
+    id: UUID = gql.field(description="The ID of the item")
+    name: str = gql.field(description="The name of the item")
+    description: str = gql.field(description="The description of the item")
+    price: float = gql.field(description="The price of the item")
+    stock: int = gql.field(description="The stock of the item")
+    type: gql.enum(ItemType, description="The item type")  # type: ignore
+    created_at: datetime = gql.field(description="The creation time of the item")
+    updated_at: datetime = gql.field(description="The last update time of the item")
+    image: Optional[AvatarImage] = gql.field(description="The image of the item")
 
     merchant_id: gql.Private[Optional[str]]
 
-    @gql.field
+    @gql.field(description="The associated merchant for the item")
     async def merchant(self) -> Optional[Merchant]:
         # Resolve merchant
         if self.merchant_id is None:

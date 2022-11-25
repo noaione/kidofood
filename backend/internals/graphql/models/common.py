@@ -28,22 +28,14 @@ import strawberry as gql
 
 from internals.db import AvatarImage as AvatarImageModel
 
-__all__ = (
-    "AvatarImage",
-    "AvatarType",
-)
+
+__all__ = ("AvatarImage",)
 
 
-class AvatarType:
-    USERS = "user"
-    MERCHANT = "merchant"
-    ITEMS = "items"
-
-
-@gql.type
+@gql.type(description="An avatar/image for an entity")
 class AvatarImage:
-    name: str
-    type: str
+    name: str = gql.field(description="The key of the image")
+    type: str = gql.field(description="The type of the avatar, (merchant, user, items)")
 
     @classmethod
     def from_db(cls, avatar: AvatarImageModel, type: str):

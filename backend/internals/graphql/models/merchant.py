@@ -31,23 +31,24 @@ from uuid import UUID
 import strawberry as gql
 
 from internals.db import Merchant as MerchantModel
+from internals.enums import AvatarType
 
-from .common import AvatarImage, AvatarType
+from .common import AvatarImage
 
 __all__ = ("Merchant",)
 
 
 @gql.type
 class Merchant:
-    id: UUID
-    name: str
-    description: str
-    created_at: datetime
-    updated_at: datetime
-    avatar: Optional[AvatarImage]
-    phone: Optional[str]
-    email: Optional[str]
-    website: Optional[str]
+    id: UUID = gql.field(description="The ID of the merchant")
+    name: str = gql.field(description="The name of the merchant")
+    description: str = gql.field(description="The description of the merchant")
+    created_at: datetime = gql.field(description="The creation time of the merchant")
+    updated_at: datetime = gql.field(description="The last update time of the merchant")
+    avatar: Optional[AvatarImage] = gql.field(description="The avatar of the merchant")
+    phone: Optional[str] = gql.field(description="The phone number of the merchant")
+    email: Optional[str] = gql.field(description="The email of the merchant")
+    website: Optional[str] = gql.field(description="The website of the merchant")
 
     @classmethod
     def from_db(cls, merch: MerchantModel):

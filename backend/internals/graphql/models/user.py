@@ -32,11 +32,11 @@ from bson import ObjectId
 
 from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
-from internals.db import UserType
+from internals.enums import AvatarType, UserType
 from internals.session.models import UserSession
 from internals.utils import to_uuid
 
-from .common import AvatarImage, AvatarType
+from .common import AvatarImage
 from .merchant import Merchant
 
 __all__ = ("User",)
@@ -44,14 +44,14 @@ __all__ = ("User",)
 
 @gql.type
 class User:
-    id: UUID
-    name: str
-    email: str
-    type: UserType
-    avatar: Optional[AvatarImage]
+    id: UUID = gql.field(description="The ID of the User")
+    name: str = gql.field(description="The client or user real name")
+    email: str = gql.field(description="The client or user email")
+    type: gql.enum(UserType, description="The user type")  # type: ignore
+    avatar: Optional[AvatarImage] = gql.field(description="The user avatar")
     merchant_id: gql.Private[Optional[str]]
 
-    @gql.field
+    @gql.field(description="The associated merchant information if type is MERCHANT")
     async def merchant(self) -> Optional[Merchant]:
         # Resolve merchant
         if self.merchant_id is None:

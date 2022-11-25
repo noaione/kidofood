@@ -45,11 +45,11 @@ class Connection(Generic[ResultType]):
     would be a connection that might have a `friendshipStartTime`
     """
 
-    _total: int
+    count: int = gql.field(description="The current data count", name="_total")
     """The current data count"""
-    page_info: "PageInfo"
+    page_info: "PageInfo" = gql.field(description="The current pagination information")
     """The current pagination info"""
-    nodes: List[ResultType]
+    nodes: List["ResultType"] = gql.field(description="List of resolved data")
     """The current data list"""
 
 
@@ -65,11 +65,11 @@ class PageInfo:
         - https://relay.dev/graphql/connections.htm
     """
 
-    total_results: int
+    total_results: int = gql.field(description="The total data count on all pages")
     """The total data count on all pages"""
-    per_page: int
+    per_page: int = gql.field(description="How much data exist per page")
     """How much data exist per page"""
-    next_cursor: Optional[str]
+    next_cursor: Optional[str] = gql.field(description="Next cursor for pagination")
     """Next cursor for pagination"""
-    has_next_page: bool
+    has_next_page: bool = gql.field(description="Whether there is a next page or not")
     """Whether there is a next page or not"""

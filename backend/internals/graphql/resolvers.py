@@ -47,7 +47,7 @@ __all__ = (
 Cursor = str
 
 
-@gql.enum
+@gql.enum(description="The sort direction for pagination")
 class SortDirection(str, Enum):
     ASC = "asc"
     DESC = "desc"
