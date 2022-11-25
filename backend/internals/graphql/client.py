@@ -25,6 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 from typing import Optional, Union
+from uuid import UUID
 
 import strawberry as gql
 from strawberry.types import Info
@@ -38,6 +39,7 @@ from .resolvers import (
     resolve_food_order_paginated,
     resolve_merchant_paginated,
 )
+from .scalars import UUID as UUID2
 
 __all__ = (
     "Query",
@@ -136,4 +138,4 @@ if _has_any_function_or_attr(Mutation):
 if _has_any_function_or_attr(Subscription):
     _schema_params["subscription"] = Subscription
 
-schema = gql.Schema(**_schema_params)
+schema = gql.Schema(**_schema_params, scalar_overrides={UUID: UUID2})
