@@ -30,17 +30,10 @@ from typing import Optional
 from pendulum.datetime import DateTime
 
 from internals.db import FoodItem as FoodItemDB
-from internals.db import ItemType
 from internals.db import Merchant as MerchantDB
+from internals.enums import AvatarType, ItemType
 
-from .common import (
-    AvatarResponse,
-    AvatarType,
-    PartialIDAvatar,
-    PartialIDName,
-    _coerce_to_pendulum,
-    pendulum_utc,
-)
+from .common import AvatarResponse, PartialIDAvatar, PartialIDName, _coerce_to_pendulum, pendulum_utc
 
 __all__ = ("FoodItemResponse",)
 

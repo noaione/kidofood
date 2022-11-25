@@ -39,7 +39,6 @@ from internals.db import AvatarImage
 
 __all__ = (
     "pendulum_utc",
-    "AvatarType",
     "AvatarResponse",
     "PartialID",
     "PartialIDName",
@@ -65,12 +64,6 @@ def _coerce_to_pendulum(data: Any):
     if isinstance(data, datetime):
         return pendulum.instance(data)
     return None
-
-
-class AvatarType:
-    USERS = "user"
-    MERCHANT = "merchant"
-    ITEMS = "items"
 
 
 @dataclass

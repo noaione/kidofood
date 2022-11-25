@@ -26,14 +26,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.datastructures import Default
 from fastapi.responses import RedirectResponse
+from strawberry.printer import print_schema
+from strawberry.fastapi import GraphQLRouter
 
 from internals.db import KFDatabase
 from internals.discover import discover_routes
+from internals.graphql import schema, KidoFoodContext
 from internals.responses import ORJSONXResponse, ResponseType
-from internals.session import SessionError, create_session_handler, get_session_handler
+from internals.session import SessionError, create_session_handler, get_session_handler, check_session
 from internals.storage import create_s3_server, get_s3_or_local
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean, try_int
@@ -135,14 +138,36 @@ async def session_exception_handler(_: Request, exc: SessionError):
     return ResponseType(error=exc.detail, code=status_code).to_orjson(status_code)
 
 
+async def gql_user_context(request: Request):
+    try:
+        session = await check_session(request)
+        return KidoFoodContext(user=session)
+    except Exception:
+        return KidoFoodContext()
+
+
+async def get_context(
+    custom_context=Depends(gql_user_context),
+):
+    return custom_context
+
+
 ORJSONDefault = Default(ORJSONXResponse)
 # Auto add routes using discovery
 discover_routes(router, ROOT_DIR / "routes", recursive=True, default_response_class=ORJSONDefault)
-
+graphql_app = GraphQLRouter(
+    schema,
+    context_getter=get_context,
+)
 app.include_router(router)
+app.include_router(graphql_app, prefix="/graphql")
 
 
 @app.get("/", include_in_schema=False)
 async def root_api():
     # Redirect to docs
     return RedirectResponse("/docs")
+
+
+if __name__ == "__main__":
+    print(print_schema(schema))

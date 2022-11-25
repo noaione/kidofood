@@ -10,6 +10,7 @@ A ton of internal modules for KidoFood backend.
 from . import db, graphql, models, session
 from .depends import *
 from .discover import *
+from .enums import *
 from .redbridge import *
 from .responses import *
 from .session import *

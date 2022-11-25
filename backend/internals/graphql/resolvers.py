@@ -47,6 +47,7 @@ __all__ = (
 Cursor = str
 
 
+@gql.enum
 class SortDirection(str, Enum):
     ASC = "asc"
     DESC = "desc"
@@ -135,7 +136,7 @@ async def resolve_merchant_paginated(
     )
     if len(items) < 1:
         return Connection(
-            _total=0,
+            count=0,
             page_info=PageInfo(total_results=0, per_page=limit, next_cursor=None, has_next_page=False),
             nodes=[],
         )
@@ -154,7 +155,7 @@ async def resolve_merchant_paginated(
     mapped_items = [Merchant.from_db(item) for item in items]
 
     return Connection(
-        _total=len(mapped_items),
+        count=len(mapped_items),
         page_info=PageInfo(
             total_results=items_count,
             per_page=limit,
@@ -199,7 +200,7 @@ async def resolve_food_items_paginated(
     )
     if len(items) < 1:
         return Connection(
-            _total=0,
+            count=0,
             page_info=PageInfo(total_results=0, per_page=limit, next_cursor=None, has_next_page=False),
             nodes=[],
         )
@@ -218,7 +219,7 @@ async def resolve_food_items_paginated(
     mapped_items = [FoodItem.from_db(item) for item in items]
 
     return Connection(
-        _total=len(mapped_items),
+        count=len(mapped_items),
         page_info=PageInfo(
             total_results=items_count,
             per_page=limit,

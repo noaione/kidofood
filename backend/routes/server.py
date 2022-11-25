@@ -28,7 +28,8 @@ import logging
 
 from fastapi import APIRouter
 
-from internals.db import User, UserType
+from internals.db import User
+from internals.enums import UserType
 from internals.models import PartialRegister
 from internals.responses import ResponseType
 from internals.session import PartialUserSession, encrypt_password

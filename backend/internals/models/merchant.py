@@ -30,8 +30,9 @@ from typing import Optional
 from pendulum.datetime import DateTime
 
 from internals.db import Merchant as MerchantDB
+from internals.enums import AvatarType
 
-from .common import AvatarResponse, AvatarType, PartialIDName, _coerce_to_pendulum, pendulum_utc
+from .common import AvatarResponse, PartialIDName, _coerce_to_pendulum, pendulum_utc
 
 __all__ = ("MerchantResponse",)
 

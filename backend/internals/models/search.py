@@ -32,8 +32,9 @@ from bson import ObjectId
 from pydantic import BaseModel
 
 from internals.db import AvatarImage
+from internals.enums import AvatarType
 
-from .common import AvatarResponse, AvatarType, PartialIDAvatar, PartialIDName
+from .common import AvatarResponse, PartialIDAvatar, PartialIDName
 
 __all__ = (
     "MerchantSearch",

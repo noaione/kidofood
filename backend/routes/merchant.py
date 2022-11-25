@@ -31,11 +31,11 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends
 
-from internals.db import FoodItem, FoodOrder, Merchant, OrderStatus, UserType
+from internals.db import FoodItem, FoodOrder, Merchant
 from internals.depends import PaginationParams, SortDirection, pagination_parameters
+from internals.enums import AvatarType, OrderStatus, UserType
 from internals.models import (
     AvatarResponse,
-    AvatarType,
     FoodItemResponse,
     FoodOrderResponse,
     MerchantResponse,

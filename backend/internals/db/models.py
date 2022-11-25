@@ -24,7 +24,6 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -32,56 +31,17 @@ from beanie import Document, Link
 from pendulum.datetime import DateTime
 from pydantic import BaseModel, Field
 
+from internals.enums import ItemType, OrderStatus, UserType
+
 from ._doc import _coerce_to_pendulum, pendulum_utc
 
 __all__ = (
-    "ItemType",
-    "UserType",
-    "OrderStatus",
     "AvatarImage",
     "Merchant",
     "FoodItem",
     "User",
     "FoodOrder",
 )
-
-
-class ItemType(str, Enum):
-    DRINK = "drink"
-    MEAL = "meal"
-    PACKAGE = "package"
-
-
-class UserType(int, Enum):
-    CUSTOMER = 0
-    MERCHANT = 1
-    ADMIN = 999
-
-
-class OrderStatus(int, Enum):
-    # Pending payment
-    PENDING = 0
-    # Payment is done, submitted to merchant
-    FORWARDED = 1
-    # Merchant accepted the order, processing
-    ACCEPTED = 2
-    # Merchant processing the order
-    PROCESSING = 3
-    # Merchant finished processing the order, delivery
-    DELIVERING = 4
-    # Merchant rejected the order
-    REJECTED = 100
-    # User cancelled the order
-    CANCELLED = 101
-    # Merchant canceled the order
-    CANCELED_MERCHANT = 102
-    # Problem with the order
-    # merchant problem
-    PROBLEM_MERCHANT = 103
-    # user problem
-    PROBLEM_FAIL_TO_DELIVER = 104
-    # Order is complete
-    DONE = 200
 
 
 class AvatarImage(BaseModel):

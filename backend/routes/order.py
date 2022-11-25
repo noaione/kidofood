@@ -32,8 +32,9 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends
 
-from internals.db import FoodOrder, OrderStatus
+from internals.db import FoodOrder
 from internals.depends import PaginationParams, SortDirection, pagination_parameters
+from internals.enums import OrderStatus
 from internals.models import FoodOrderResponse
 from internals.responses import PaginatedResponseType, PaginationInfo, ResponseType
 from internals.session import UserSession, check_session

@@ -32,10 +32,10 @@ from pendulum.datetime import DateTime
 from internals.db import FoodItem as FoodItemDB
 from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
-from internals.db import OrderStatus
 from internals.db import User as UserDB
+from internals.enums import AvatarType, OrderStatus
 
-from .common import AvatarResponse, AvatarType, PartialID, PartialIDAvatar, _coerce_to_pendulum, pendulum_utc
+from .common import AvatarResponse, PartialID, PartialIDAvatar, _coerce_to_pendulum, pendulum_utc
 from .items import FoodItemResponse
 
 __all__ = ("FoodOrderResponse",)

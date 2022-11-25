@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-to_be_linted = ["internals", "routes", "graphql", "app.py"]
+to_be_linted = ["internals", "routes", "app.py"]
 
 
 def check_license_header(file: Path) -> bool:
