@@ -1,0 +1,162 @@
+"""An avatar/image for an entity"""
+type AvatarImage {
+  """The key of the image"""
+  name: String!
+
+  """The type of the avatar, (merchant, user, items)"""
+  type: String!
+}
+
+"""Date with time (isoformat)"""
+scalar DateTime
+
+type FoodItem {
+  """The ID of the item"""
+  id: UUID!
+
+  """The name of the item"""
+  name: String!
+
+  """The description of the item"""
+  description: String!
+
+  """The price of the item"""
+  price: Float!
+
+  """The stock of the item"""
+  stock: Int!
+
+  """The item type"""
+  type: ItemType!
+
+  """The creation time of the item"""
+  createdAt: DateTime!
+
+  """The last update time of the item"""
+  updatedAt: DateTime!
+
+  """The image of the item"""
+  image: AvatarImage
+
+  """The associated merchant for the item"""
+  merchant: Merchant
+}
+
+type FoodItemConnection {
+  """The current data count"""
+  _total: Int!
+
+  """The current pagination information"""
+  pageInfo: PageInfo!
+
+  """List of resolved data"""
+  nodes: [FoodItem!]!
+}
+
+"""The item type"""
+enum ItemType {
+  DRINK
+  MEAL
+  PACKAGE
+}
+
+type Merchant {
+  """The ID of the merchant"""
+  id: UUID!
+
+  """The name of the merchant"""
+  name: String!
+
+  """The description of the merchant"""
+  description: String!
+
+  """The creation time of the merchant"""
+  createdAt: DateTime!
+
+  """The last update time of the merchant"""
+  updatedAt: DateTime!
+
+  """The avatar of the merchant"""
+  avatar: AvatarImage
+
+  """The phone number of the merchant"""
+  phone: String
+
+  """The email of the merchant"""
+  email: String
+
+  """The website of the merchant"""
+  website: String
+}
+
+type MerchantConnection {
+  """The current data count"""
+  _total: Int!
+
+  """The current pagination information"""
+  pageInfo: PageInfo!
+
+  """List of resolved data"""
+  nodes: [Merchant!]!
+}
+
+type PageInfo {
+  """The total data count on all pages"""
+  totalResults: Int!
+
+  """How much data exist per page"""
+  perPage: Int!
+
+  """Next cursor for pagination"""
+  nextCursor: String
+
+  """Whether there is a next page or not"""
+  hasNextPage: Boolean!
+}
+
+type Query {
+  search: QuerySearch!
+  user: User!
+  merchants(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): MerchantConnection!
+  items(id: [ID!], limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodItemConnection!
+}
+
+type QuerySearch {
+  merchants(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): MerchantConnection!
+  items(query: String!, limit: Int! = 20, cursor: String, sort: SortDirection! = ASC): FoodItemConnection!
+}
+
+"""The sort direction for pagination"""
+enum SortDirection {
+  ASC
+  DESC
+}
+
+scalar UUID
+
+type User {
+  """The ID of the User"""
+  id: UUID!
+
+  """The client or user real name"""
+  name: String!
+
+  """The client or user email"""
+  email: String!
+
+  """The user type"""
+  type: UserType!
+
+  """The user avatar"""
+  avatar: AvatarImage
+
+  """The associated merchant information if type is MERCHANT"""
+  merchant: Merchant
+}
+
+"""The user type"""
+enum UserType {
+  CUSTOMER
+  MERCHANT
+  ADMIN
+}
