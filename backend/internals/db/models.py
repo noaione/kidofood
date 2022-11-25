@@ -27,7 +27,7 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID, uuid4
 
-from beanie import Document, Link
+from beanie import Document, Link, Replace, SaveChanges, Update, before_event
 from pendulum.datetime import DateTime
 from pydantic import BaseModel, Field
 
@@ -74,6 +74,10 @@ class Merchant(Document):
         super().__init__(*args, **kwargs)
         _coerce_to_pendulum(self)
 
+    @before_event(Replace, Update, SaveChanges)
+    def update_time(self):
+        self.updated_at = pendulum_utc()
+
 
 class FoodItem(Document):
     item_id: UUID = Field(default_factory=uuid4, unique=True)
@@ -97,6 +101,10 @@ class FoodItem(Document):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _coerce_to_pendulum(self)
+
+    @before_event(Replace, Update, SaveChanges)
+    def update_time(self):
+        self.updated_at = pendulum_utc()
 
 
 class User(Document):
@@ -125,6 +133,10 @@ class User(Document):
         super().__init__(*args, **kwargs)
         _coerce_to_pendulum(self)
 
+    @before_event(Replace, Update, SaveChanges)
+    def update_time(self):
+        self.updated_at = pendulum_utc()
+
 
 class FoodOrder(Document):
     order_id: UUID = Field(default_factory=uuid4, unique=True)
@@ -145,3 +157,7 @@ class FoodOrder(Document):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _coerce_to_pendulum(self)
+
+    @before_event(Replace, Update, SaveChanges)
+    def update_time(self):
+        self.updated_at = pendulum_utc()
