@@ -91,10 +91,11 @@ def query_or_ids(
     query: Optional[str] = gql.UNSET,
     ids: Optional[Union[gql.ID, list[gql.ID]]] = gql.UNSET,
 ) -> Optional[Union[list[ObjectId], str]]:
+    query = query if query is not gql.UNSET else None
     parsed_ids = parse_ids(ids)
+    if query is None and parsed_ids is None:
+        return None
     if query is None and parsed_ids is not None:
-        return parsed_ids
-    if query is gql.UNSET and parsed_ids is not None:
         return parsed_ids
     if query is None and parsed_ids is None:
         return None
