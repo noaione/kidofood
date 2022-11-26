@@ -27,11 +27,12 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID, uuid4
 
-from beanie import Document, Link, Replace, SaveChanges, Update, before_event
+from beanie import Document, Link, Replace, SaveChanges, Update, after_event, before_event
 from pendulum.datetime import DateTime
 from pydantic import BaseModel, Field
 
 from internals.enums import ApprovalStatus, ItemType, OrderStatus, UserType
+from internals.pubsub import get_pubsub
 
 from ._doc import _coerce_to_pendulum, pendulum_utc
 
@@ -161,3 +162,8 @@ class FoodOrder(Document):
     @before_event(Replace, Update, SaveChanges)
     def update_time(self):
         self.updated_at = pendulum_utc()
+
+    @after_event(Replace, Update, SaveChanges)
+    def publish_changes(self):
+        ps = get_pubsub()
+        ps.publish(f"order:updated:{str(self.order_id)}", self)
