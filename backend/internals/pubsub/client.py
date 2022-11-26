@@ -26,9 +26,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, Optional, Union
+from dataclasses import dataclass
+from typing import Any, Dict, Literal, Optional, Union
 
-from ._types import PSCallback, PSAsyncCallback
+from ._types import PSAsyncCallback, PSCallback
 
 __all__ = (
     "PubSubHandler",
@@ -38,17 +39,26 @@ PSDualCallback = Union[PSAsyncCallback, PSCallback]
 logger = logging.getLogger("Internals.PubSub")
 
 
+@dataclass
+class PubSubTopic:
+    type: Literal["iterator", "callback"]
+    callback: Optional[PSDualCallback] = None
+
+
 class PubSubHandler:
     def __init__(self, *, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
-        self.__topic_handler: Dict[str, PSDualCallback] = {}
+        self.__topic_handler: Dict[str, PubSubTopic] = {}
         self._loop = loop or asyncio.get_event_loop()
 
         self._task_dict: Dict[str, asyncio.Task] = {}
         self._close_latch: bool = False
 
+        self._msg_queue: Dict[str, asyncio.Queue[Any]] = {}
+
     async def close(self):
         self._close_latch = True
         for task in self._task_dict.values():
+            task.cancel()
             await task
 
     # on done callback from create_task
@@ -73,17 +83,43 @@ class PubSubHandler:
             return
         if topic not in self.__topic_handler:
             return
-        callback = self.__topic_handler[topic]
+        topical = self.__topic_handler[topic]
         logger.info(f"Publishing to {topic} with data {data!r}")
-        task = asyncio.create_task(self._run_callback(callback, data))
-        task.add_done_callback(self._deregister_task)
-        self._task_dict[task.get_name()] = task
+        if topical.type == "callback" and topical.callback is not None:
+            task = asyncio.create_task(self._run_callback(topical.callback, data))
+            task.add_done_callback(self._deregister_task)
+            self._task_dict[task.get_name()] = task
+        elif topical.type == "iterator":
+            msg_q = self._msg_queue.get(topic)
+            if msg_q is None:
+                logger.warning(f"Topic {topic} is not subscribed to")
+                return
+            msg_q.put_nowait(data)
 
     def subscribe(self, topic: str, callback: PSDualCallback) -> None:
-        self.__topic_handler[topic] = callback
+        self.__topic_handler[topic] = PubSubTopic(callback=callback, type="callback")
 
     def unsubscribe(self, topic: str) -> None:
         self.__topic_handler.pop(topic, None)
+
+    async def listen(self, topic: str):
+        self.__topic_handler[topic] = PubSubTopic(type="iterator")
+        msg_q = self._msg_queue.get(topic) or asyncio.Queue[Any]()
+        self._msg_queue[topic] = msg_q
+
+        try:
+            while True:
+                try:
+                    data = await asyncio.wait_for(msg_q.get(), timeout=10.0)
+                    yield data
+                except asyncio.TimeoutError:
+                    if self._close_latch:
+                        break
+                    continue
+        except asyncio.CancelledError:
+            pass
+        self.__topic_handler.pop(topic, None)
+        self._msg_queue.pop(topic, None)
 
 
 _GLOBAL_PUBSUB = PubSubHandler()

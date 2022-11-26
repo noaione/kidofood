@@ -26,6 +26,5 @@ from __future__ import annotations
 
 from typing import Any, Awaitable, Callable
 
-
 PSCallback = Callable[[Any], None]
 PSAsyncCallback = Callable[[Any], Awaitable[None]]
