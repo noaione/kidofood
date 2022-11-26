@@ -63,7 +63,7 @@ export default function RegisterPage() {
                             className="w-full bg-red-600 text-white rounded-lg font-bold hover:opacity-80 transition-opacity py-3"
                             type="submit"
                             name="password"
-                            value="Login"
+                            value="Create new account"
                         />
                     </div>
                 </div>
