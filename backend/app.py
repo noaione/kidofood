@@ -170,4 +170,18 @@ async def root_api():
 
 
 if __name__ == "__main__":
-    print(print_schema(schema))
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    subparser = parser.add_subparsers(dest="cmd")
+    subparser.add_parser("generate-schema")
+    args = parser.parse_args()
+
+    if args.cmd == "generate-schema":
+        schematics = print_schema(schema)
+        schema_file = ROOT_DIR / "schema.graphql"
+        with open(schema_file, "wb") as fp:
+            fp.write(schematics.encode("utf-8") + b"\n")
+        print(f"Schema generated at {schema_file}")
+    else:
+        print("Unknown command, exiting...")
