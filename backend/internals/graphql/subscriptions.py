@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 from __future__ import annotations
+
 from typing import AsyncGenerator, cast
 
 import strawberry as gql
@@ -30,6 +31,7 @@ import strawberry as gql
 from internals.db import FoodOrder as FoodOrderDB
 from internals.pubsub import get_pubsub
 from internals.utils import to_uuid
+
 from .models import FoodOrderGQL
 
 __all__ = ("subs_order_update",)
