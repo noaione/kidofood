@@ -24,7 +24,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from typing import Optional, Union, cast
+from typing import AsyncGenerator, Optional, Union, cast
 from uuid import UUID
 
 import strawberry as gql
@@ -48,6 +48,7 @@ from .resolvers import (
     resolve_user_from_db,
 )
 from .scalars import UUID as UUID2
+from .subscriptions import subs_order_update
 
 __all__ = (
     "Query",
@@ -203,7 +204,12 @@ class Mutation:
 
 @gql.type
 class Subscription:
-    pass
+    @gql.subscription(description="Subscribe to food orders updates")
+    async def order_update(self, info: Info[KidoFoodContext, None], id: gql.ID) -> AsyncGenerator[FoodOrderGQL, None]:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+        async for order in subs_order_update(id):
+            yield order
 
 
 def _has_any_function_or_attr(obj: Union[type, object]) -> bool:
