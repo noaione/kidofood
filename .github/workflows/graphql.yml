@@ -80,7 +80,7 @@ jobs:
         run: |
           cd backend
           mv schema.graphql schema.graphql.old
-          pnpm generate-schema
+          pnpm generate:schema
           python3 pipelines/compare-schema.py schema.graphql schema.graphql.old
 
       - name: Commit changes
