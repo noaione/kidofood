@@ -25,12 +25,17 @@ SOFTWARE.
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any, Dict, Optional, Union
 
 from ._types import PSCallback, PSAsyncCallback
 
-__all__ = ("PubSubHandler",)
+__all__ = (
+    "PubSubHandler",
+    "get_pubsub",
+)
 PSDualCallback = Union[PSAsyncCallback, PSCallback]
+logger = logging.getLogger("Internals.PubSub")
 
 
 class PubSubHandler:
@@ -39,25 +44,37 @@ class PubSubHandler:
         self._loop = loop or asyncio.get_event_loop()
 
         self._task_dict: Dict[str, asyncio.Task] = {}
+        self._close_latch: bool = False
+
+    async def close(self):
+        self._close_latch = True
+        for task in self._task_dict.values():
+            await task
 
     # on done callback from create_task
     def _deregister_task(self, task: asyncio.Task) -> None:
         task_name = task.get_name()
         try:
+            logger.info(f"Task {task_name} done, deregistering")
             del self._task_dict[task_name]
         except KeyError:
             pass
 
     async def _run_callback(self, callback: PSDualCallback, data: Any) -> None:
+        logger.info(f"Running callback {callback!r} with data {data!r}")
         if asyncio.iscoroutinefunction(callback):
             await callback(data)
         else:
             await self._loop.run_in_executor(None, callback, data)
 
     def publish(self, topic: str, data: Any) -> None:
+        if self._close_latch:
+            logger.warning("PubSubHandler is closing, cannot publish")
+            return
         if topic not in self.__topic_handler:
             return
         callback = self.__topic_handler[topic]
+        logger.info(f"Publishing to {topic} with data {data!r}")
         task = asyncio.create_task(self._run_callback(callback, data))
         task.add_done_callback(self._deregister_task)
         self._task_dict[task.get_name()] = task
@@ -67,3 +84,10 @@ class PubSubHandler:
 
     def unsubscribe(self, topic: str) -> None:
         self.__topic_handler.pop(topic, None)
+
+
+_GLOBAL_PUBSUB = PubSubHandler()
+
+
+def get_pubsub():
+    return _GLOBAL_PUBSUB

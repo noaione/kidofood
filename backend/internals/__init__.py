@@ -7,7 +7,7 @@ A ton of internal modules for KidoFood backend.
 :license: MIT, see LICENSE for more details.
 """
 
-from . import db, graphql, models, session
+from . import db, graphql, models, pubsub, session
 from .depends import *
 from .discover import *
 from .enums import *

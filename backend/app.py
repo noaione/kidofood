@@ -34,6 +34,7 @@ from strawberry.printer import print_schema
 from internals.db import KFDatabase
 from internals.discover import discover_routes
 from internals.graphql import KidoFoodContext, KidoGraphQLRouter, schema
+from internals.pubsub import get_pubsub
 from internals.responses import ORJSONXResponse, ResponseType
 from internals.session import SessionError, check_session, create_session_handler, get_session_handler
 from internals.storage import create_s3_server, get_s3_or_local
@@ -119,6 +120,10 @@ async def on_app_shutdown():
     logger.info("Closing storage connection...")
     s3_local.close()
     logger.info("Closed storage connection!")
+    pubsub = get_pubsub()
+    logger.info("Closing pubsub connection...")
+    await pubsub.close()
+    logger.info("Closed pubsub connection!")
 
     try:
         logger.info("Closing redis session backend...")
