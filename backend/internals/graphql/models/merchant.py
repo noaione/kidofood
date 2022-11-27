@@ -29,6 +29,7 @@ from typing import Optional, Type
 from uuid import UUID
 
 import strawberry as gql
+from strawberry.file_uploads import Upload
 
 from internals.db import Merchant as MerchantModel
 from internals.enums import AvatarType
@@ -36,7 +37,10 @@ from internals.enums import AvatarType
 from ..enums import ApprovalStatusGQL
 from .common import AvatarImageGQL
 
-__all__ = ("MerchantGQL",)
+__all__ = (
+    "MerchantGQL",
+    "MerchantInputGQL",
+)
 
 
 @gql.type(name="Merchant", description="Merchant model")
@@ -71,3 +75,17 @@ class MerchantGQL:
             email=merch.email,
             website=merch.website,
         )
+
+
+@gql.input(
+    name="MerchantInput",
+    description="Merchant update or new data information (all fields are optional, except some of them)",
+)
+class MerchantInputGQL:
+    name: Optional[str] = gql.field(description="The name of the merchant")
+    description: Optional[str] = gql.field(description="The description of the merchant")
+    address: Optional[str] = gql.field(description="The address of the merchant")
+    avatar: Optional[Upload] = gql.field(description="The avatar of the merchant")
+    phone: Optional[str] = gql.field(description="The phone number of the merchant")
+    email: Optional[str] = gql.field(description="The email of the merchant")
+    website: Optional[str] = gql.field(description="The website of the merchant")
