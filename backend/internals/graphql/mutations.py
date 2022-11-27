@@ -25,7 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, cast
 
 import strawberry as gql
 from beanie import WriteRules
@@ -36,7 +36,7 @@ from internals.db import User as UserDB
 from internals.enums import ApprovalStatus
 from internals.session import encrypt_password, verify_password
 
-from .models import UserGQL
+from .models import MerchantInputGQL, UserGQL
 
 __all__ = (
     "mutate_login_user",
@@ -81,15 +81,25 @@ async def mutate_register_user(
 
 async def mutate_apply_new_merchant(
     user: UserGQL,
-    name: str,
-    description: str,
-    address: str,
-    avatar: Optional[AvatarImage] = gql.UNSET,
+    merchant: MerchantInputGQL,
 ):
     logger.info(f"Applying new merchant for {user.id}")
     if user.merchant_id is not None:
         logger.error(f"User<{user.id}>: Already have merchant account")
         return False, "User already has a merchant account", None
+    name = merchant.name if merchant.name is not gql.UNSET else None
+    description = merchant.description if merchant.description is not gql.UNSET else None
+    address = merchant.address if merchant.address is not gql.UNSET else None
+    # avatar = merchant.avatar if merchant.avatar is not gql.UNSET else None
+
+    if name is None:
+        logger.error(f"User<{user.id}>: Merchant name is required")
+        return False, "Merchant name is required", None
+    description = description or ""
+    if address is None:
+        logger.error(f"User<{user.id}>: Merchant address is required")
+        return False, "Merchant address is required", None
+
     user_acc = await UserDB.find_one(UserDB.user_id == user.id)
     if user_acc is None:
         logger.error(f"User<{user.id}>: User not found at database")
@@ -97,18 +107,17 @@ async def mutate_apply_new_merchant(
     if user_acc.merchant is not None:
         logger.error(f"User<{user.id}>: Already have merchant account")
         return False, "User already has a merchant account", None
-    avatar = avatar or AvatarImage()
-    merchant = MerchantDB(
-        name=name,
-        description=description,
-        address=address,
-        avatar=AvatarImage(key="", format=""),
+    # avatar = avatar or AvatarImage()
+    new_merchant = MerchantDB(
+        name=cast(str, name),
+        description=cast(str, description),
+        address=cast(str, address),
     )
-    user_acc.merchant = merchant  # type: ignore
+    user_acc.merchant = new_merchant  # type: ignore
     logger.info(f"User<{user.id}>: Saving...")
     await user_acc.save(link_rule=WriteRules.WRITE)
     logger.info(f"User<{user.id}>: Saved")
-    return True, merchant, user_acc
+    return True, new_merchant, user_acc
 
 
 async def mutate_update_merchant(

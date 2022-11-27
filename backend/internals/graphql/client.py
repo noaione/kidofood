@@ -28,8 +28,6 @@ from typing import AsyncGenerator, Optional, Union, cast
 from uuid import UUID
 
 import strawberry as gql
-from fastapi import UploadFile
-from strawberry.file_uploads import Upload
 from strawberry.types import Info
 
 from internals.db import Merchant as MerchantDB
@@ -37,7 +35,7 @@ from internals.session import UserSession
 
 from .context import KidoFoodContext
 from .enums import ApprovalStatusGQL
-from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, UserGQL
+from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, MerchantInputGQL, UserGQL
 from .mutations import mutate_apply_new_merchant, mutate_login_user, mutate_register_user
 from .resolvers import (
     Cursor,
@@ -178,28 +176,22 @@ class Mutation:
     async def apply_merchant(
         self,
         info: Info[KidoFoodContext, None],
-        name: str,
-        description: str,
-        address: str,
-        avatar: Optional[Upload] = gql.UNSET,
+        merchant: MerchantInputGQL,
     ) -> MerchantResult:
         if info.context.user is None:
             raise Exception("You are not logged in")
         user = UserGQL.from_session(info.context.user)
-        # Process avatar upload
-        ava_bytes = cast(Optional[UploadFile], avatar if avatar is not gql.UNSET else None)
-        if ava_bytes is not None:
-            pass
-        is_success, merchant, userchange = await mutate_apply_new_merchant(
-            user=user, name=name, description=description, address=address, avatar=None
+        is_success, new_merchant, userchange = await mutate_apply_new_merchant(
+            user=user,
+            merchant=merchant,
         )
-        if not is_success and isinstance(merchant, str):
-            return Result(success=False, message=merchant)
+        if not is_success and isinstance(new_merchant, str):
+            return Result(success=False, message=new_merchant)
         if userchange is not None:
             user_data = UserSession.from_db(userchange, True)
             info.context.session_latch = True
             info.context.user = user_data
-        return MerchantGQL.from_db(cast(MerchantDB, merchant))
+        return MerchantGQL.from_db(cast(MerchantDB, new_merchant))
 
 
 @gql.type

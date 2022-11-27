@@ -82,10 +82,10 @@ class MerchantGQL:
     description="Merchant update or new data information (all fields are optional, except some of them)",
 )
 class MerchantInputGQL:
-    name: Optional[str] = gql.field(description="The name of the merchant")
-    description: Optional[str] = gql.field(description="The description of the merchant")
-    address: Optional[str] = gql.field(description="The address of the merchant")
-    avatar: Optional[Upload] = gql.field(description="The avatar of the merchant")
-    phone: Optional[str] = gql.field(description="The phone number of the merchant")
-    email: Optional[str] = gql.field(description="The email of the merchant")
-    website: Optional[str] = gql.field(description="The website of the merchant")
+    name: Optional[str] = gql.field(description="The name of the merchant", default=gql.UNSET)
+    description: Optional[str] = gql.field(description="The description of the merchant", default=gql.UNSET)
+    address: Optional[str] = gql.field(description="The address of the merchant", default=gql.UNSET)
+    avatar: Optional[Upload] = gql.field(description="The avatar of the merchant", default=gql.UNSET)
+    phone: Optional[str] = gql.field(description="The phone number of the merchant", default=gql.UNSET)
+    email: Optional[str] = gql.field(description="The email of the merchant", default=gql.UNSET)
+    website: Optional[str] = gql.field(description="The website of the merchant", default=gql.UNSET)
