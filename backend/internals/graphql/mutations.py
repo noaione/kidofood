@@ -39,13 +39,14 @@ from internals.session import encrypt_password, verify_password
 from internals.utils import make_uuid, to_uuid
 
 from .files import handle_image_upload
-from .models import MerchantInputGQL, UserGQL
+from .models import MerchantInputGQL, UserGQL, UserInputGQL
 
 __all__ = (
     "mutate_login_user",
     "mutate_register_user",
     "mutate_apply_new_merchant",
     "mutate_update_merchant",
+    "mutate_update_user",
 )
 
 logger = logging.getLogger("GraphQL.Mutations")
@@ -183,9 +184,8 @@ async def mutate_update_merchant(
         return False, "Only admin can change approval status"
     elif approval is not None and user.type == UserType.ADMIN:
         merchant_acc.approved = approval
-    merchant_uuid = cast(UUID, make_uuid(False))
     if avatar is not None:
-        avatar_upload = await handle_image_upload(avatar, str(merchant_uuid), AvatarType.MERCHANT)
+        avatar_upload = await handle_image_upload(avatar, str(merchant_acc.merchant_id), AvatarType.MERCHANT)
         avatar_ingfo = AvatarImage(
             key=avatar_upload.filename,
             format=avatar_upload.extension.lstrip("."),
@@ -196,3 +196,46 @@ async def mutate_update_merchant(
     await merchant_acc.save_changes()
 
     return True, merchant_acc
+
+
+async def mutate_update_user(
+    id: gql.ID,
+    user: UserInputGQL,
+) -> Union[Tuple[Literal[False], str], Tuple[Literal[True], UserGQL]]:
+    if user.is_unset():
+        logger.warning(f"User<{id}>: No changes to update")
+        return False, "No changes to User data"
+    logger.info(f"Trying to find user: {id}")
+    user_acc = await UserDB.find_one(UserDB.user_id == to_uuid(id))
+    if user_acc is None:
+        logger.error(f"User<{id}>: User not found")
+        return False, "User not found"
+    name = user.name if user.name is not gql.UNSET else None
+    avatar = user.avatar if user.avatar is not gql.UNSET else None
+    password = user.password if user.password is not gql.UNSET else None
+    new_password = user.new_password if user.new_password is not gql.UNSET else None
+    if name is not None:
+        user_acc.name = name
+    if password is not None and new_password is None:
+        logger.error(f"User<{id}>: New password is not provided")
+        return False, "New password is not provided"
+    if new_password is not None and password is None:
+        logger.error(f"User<{id}>: Current password is not provided")
+        return False, "Current password is not provided"
+    if password is not None and new_password is not None:
+        is_correct, _ = await verify_password(password, user_acc.password)
+        if not is_correct:
+            logger.error(f"User<{id}>: Incorrect password")
+            return False, "Incorrect current password"
+        new_pass_hash = await encrypt_password(new_password)
+        user_acc.password = new_pass_hash
+    if avatar is not None:
+        avatar_upload = await handle_image_upload(avatar, str(user_acc.user_id), AvatarType.MERCHANT)
+        avatar_ingfo = AvatarImage(
+            key=avatar_upload.filename,
+            format=avatar_upload.extension.lstrip("."),
+        )
+        user_acc.avatar = avatar_ingfo
+    logger.info(f"User<{id}>: Saving updates...")
+    await user_acc.save_changes()
+    return True, UserGQL.from_db(user_acc)

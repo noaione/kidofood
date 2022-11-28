@@ -29,6 +29,7 @@ from uuid import UUID
 
 import strawberry as gql
 from bson import ObjectId
+from strawberry.file_uploads import Upload
 
 from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
@@ -40,7 +41,10 @@ from ..enums import UserTypeGQL
 from .common import AvatarImageGQL
 from .merchant import MerchantGQL
 
-__all__ = ("UserGQL",)
+__all__ = (
+    "UserGQL",
+    "UserInputGQL",
+)
 
 
 @gql.type(name="User", description="User model")
@@ -111,4 +115,19 @@ class UserGQL:
             remember_me=True,
             remember_latch=False,
             session_id=make_uuid(False),
+        )
+
+
+@gql.type(name="UserInput", description="User update data information (all fields are optional.)")
+class UserInputGQL:
+    name: Optional[str] = gql.field(description="The client or user real name", default=gql.UNSET)
+    avatar: Optional[Upload] = gql.field(description="The user avatar", default=gql.UNSET)
+    password: Optional[str] = gql.field(description="The old password", default=gql.UNSET)
+    new_password: Optional[str] = gql.field(description="The new password", default=gql.UNSET)
+
+    def is_unset(self) -> bool:
+        # Check if all fields are either unset or None
+        return all(
+            getattr(self, field.name) in (gql.UNSET, None)
+            for field in self.__class__._type_definition.fields  # type: ignore (gql.input is a dataclass format)
         )

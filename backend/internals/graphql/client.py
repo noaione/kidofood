@@ -35,12 +35,21 @@ from internals.session import UserSession
 
 from .context import KidoFoodContext
 from .enums import ApprovalStatusGQL
-from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, MerchantInputGQL, UserGQL
+from .models import (
+    Connection,
+    FoodItemGQL,
+    FoodOrderGQL,
+    MerchantGQL,
+    MerchantInputGQL,
+    UserGQL,
+    UserInputGQL,
+)
 from .mutations import (
     mutate_apply_new_merchant,
     mutate_login_user,
     mutate_register_user,
     mutate_update_merchant,
+    mutate_update_user,
 )
 from .resolvers import (
     Cursor,
@@ -216,6 +225,23 @@ class Mutation:
         if not is_success and isinstance(update_merchant, str):
             return Result(success=False, message=update_merchant)
         return MerchantGQL.from_db(cast(MerchantDB, update_merchant))
+
+    @gql.mutation(description="Update user information, you must be logged in to update your own account")
+    async def update_user(
+        self,
+        info: Info[KidoFoodContext, None],
+        user: UserInputGQL,
+    ) -> UserResult:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+        user_acc = UserGQL.from_session(info.context.user)
+        is_success, update_user = await mutate_update_user(
+            id=cast(gql.ID, str(user_acc.id)),
+            user=user,
+        )
+        if not is_success and isinstance(update_user, str):
+            return Result(success=False, message=update_user)
+        return cast(UserGQL, update_user)
 
 
 @gql.type
