@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 from typing import Literal, Optional, Tuple, Union, cast
+from uuid import UUID
 
 import strawberry as gql
 from beanie import WriteRules
@@ -33,10 +34,11 @@ from beanie import WriteRules
 from internals.db import AvatarImage
 from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
-from internals.enums import ApprovalStatus, UserType
+from internals.enums import ApprovalStatus, AvatarType, UserType
 from internals.session import encrypt_password, verify_password
-from internals.utils import to_uuid
+from internals.utils import make_uuid, to_uuid
 
+from .files import handle_image_upload
 from .models import MerchantInputGQL, UserGQL
 
 __all__ = (
@@ -92,8 +94,7 @@ async def mutate_apply_new_merchant(
     name = merchant.name if merchant.name is not gql.UNSET else None
     description = merchant.description if merchant.description is not gql.UNSET else None
     address = merchant.address if merchant.address is not gql.UNSET else None
-    # TODO: Implement upload handling
-    # avatar = merchant.avatar if merchant.avatar is not gql.UNSET else None
+    avatar = merchant.avatar if merchant.avatar is not gql.UNSET else None
 
     if name is None:
         logger.error(f"User<{user.id}>: Merchant name is required")
@@ -110,11 +111,20 @@ async def mutate_apply_new_merchant(
     if user_acc.merchant is not None:
         logger.error(f"User<{user.id}>: Already have merchant account")
         return False, "User already has a merchant account", None
-    # avatar = avatar or AvatarImage()
+    avatar_ingfo = AvatarImage(key="", format="")
+    merchant_uuid = cast(UUID, make_uuid(False))
+    if avatar is not None:
+        avatar_upload = await handle_image_upload(avatar, str(merchant_uuid), AvatarType.MERCHANT)
+        avatar_ingfo = AvatarImage(
+            key=avatar_upload.filename,
+            format=avatar_upload.extension.lstrip("."),
+        )
     new_merchant = MerchantDB(
+        mercahnt_id=merchant_uuid,
         name=cast(str, name),
         description=cast(str, description),
         address=cast(str, address),
+        avatar=avatar_ingfo,
     )
     user_acc.merchant = new_merchant  # type: ignore
     logger.info(f"User<{user.id}>: Saving...")
@@ -152,8 +162,7 @@ async def mutate_update_merchant(
     mc_phone = merchant.phone if merchant.phone is not gql.UNSET else None
     mc_email = merchant.email if merchant.email is not gql.UNSET else None
     mc_website = merchant.website if merchant.website is not gql.UNSET else None
-    # TODO: Implement upload handling
-    # avatar = merchant.avatar if merchant.avatar is not gql.UNSET else None
+    avatar = merchant.avatar if merchant.avatar is not gql.UNSET else None
 
     approval = approval if approval is not gql.UNSET else None
 
@@ -174,6 +183,14 @@ async def mutate_update_merchant(
         return False, "Only admin can change approval status"
     elif approval is not None and user.type == UserType.ADMIN:
         merchant_acc.approved = approval
+    merchant_uuid = cast(UUID, make_uuid(False))
+    if avatar is not None:
+        avatar_upload = await handle_image_upload(avatar, str(merchant_uuid), AvatarType.MERCHANT)
+        avatar_ingfo = AvatarImage(
+            key=avatar_upload.filename,
+            format=avatar_upload.extension.lstrip("."),
+        )
+        merchant_acc.avatar = avatar_ingfo
 
     logger.info(f"Merchant<{id}>: Saving updates...")
     await merchant_acc.save_changes()

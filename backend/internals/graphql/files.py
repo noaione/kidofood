@@ -25,6 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 from mimetypes import guess_extension
 
 import magic
@@ -48,6 +49,13 @@ class InvalidMimeType(ValueError):
         super().__init__(f"Invalid mime type: {mime_type} (expected: {expected_mimetype})")
 
 
+@dataclass
+class UploadResult:
+    filename: str
+    extension: str
+    file_size: int
+
+
 async def get_file_mimetype(file: UploadFile):
     # Get current seek position
     loop = asyncio.get_event_loop()
@@ -63,7 +71,7 @@ async def get_file_mimetype(file: UploadFile):
     return detect
 
 
-async def handle_image_upload(file: Upload, uuid: str, image_type: str):
+async def handle_image_upload(file: Upload, uuid: str, image_type: str) -> UploadResult:
     """
     Handle file upload from GraphQL
     """
@@ -89,4 +97,4 @@ async def handle_image_upload(file: Upload, uuid: str, image_type: str):
     )
     if result is None:
         raise RuntimeError("Failed to upload file")
-    return result
+    return UploadResult(filename=uuid_gen, extension=extension, file_size=result.size)
