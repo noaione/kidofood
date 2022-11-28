@@ -89,3 +89,10 @@ class MerchantInputGQL:
     phone: Optional[str] = gql.field(description="The phone number of the merchant", default=gql.UNSET)
     email: Optional[str] = gql.field(description="The email of the merchant", default=gql.UNSET)
     website: Optional[str] = gql.field(description="The website of the merchant", default=gql.UNSET)
+
+    def is_unset(self) -> bool:
+        # Check if all fields are either unset or None
+        return all(
+            getattr(self, field.name) in (gql.UNSET, None)
+            for field in self.__class__._type_definition.fields  # type: ignore (gql.input is a dataclass format)
+        )

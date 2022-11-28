@@ -36,7 +36,12 @@ from internals.session import UserSession
 from .context import KidoFoodContext
 from .enums import ApprovalStatusGQL
 from .models import Connection, FoodItemGQL, FoodOrderGQL, MerchantGQL, MerchantInputGQL, UserGQL
-from .mutations import mutate_apply_new_merchant, mutate_login_user, mutate_register_user
+from .mutations import (
+    mutate_apply_new_merchant,
+    mutate_login_user,
+    mutate_register_user,
+    mutate_update_merchant,
+)
 from .resolvers import (
     Cursor,
     SortDirection,
@@ -192,6 +197,25 @@ class Mutation:
             info.context.session_latch = True
             info.context.user = user_data
         return MerchantGQL.from_db(cast(MerchantDB, new_merchant))
+
+    @gql.mutation(description="Update merchant information")
+    async def update_merchant(
+        self,
+        info: Info[KidoFoodContext, None],
+        id: gql.ID,
+        merchant: MerchantInputGQL,
+    ) -> MerchantResult:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+        user = UserGQL.from_session(info.context.user)
+        is_success, update_merchant = await mutate_update_merchant(
+            id=id,
+            user=user,
+            merchant=merchant,
+        )
+        if not is_success and isinstance(update_merchant, str):
+            return Result(success=False, message=update_merchant)
+        return MerchantGQL.from_db(cast(MerchantDB, update_merchant))
 
 
 @gql.type

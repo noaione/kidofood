@@ -67,7 +67,10 @@ class UserGQL:
     def from_db(cls, user: UserDB):
         merchant_id = None  # type: Optional[str]
         if user.merchant is not None:
-            merchant_id = str(user.merchant.ref.id)
+            if isinstance(user.merchant, MerchantDB):
+                merchant_id = str(user.merchant.id)
+            else:
+                merchant_id = str(user.merchant.ref.id)
         avatar = None  # type: Optional[AvatarImageGQL]
         if user.avatar and user.avatar.key:
             avatar = AvatarImageGQL.from_db(user.avatar, AvatarType.USERS)

@@ -25,7 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from typing import Optional, cast
+from typing import Literal, Optional, Tuple, Union, cast
 
 import strawberry as gql
 from beanie import WriteRules
@@ -33,8 +33,9 @@ from beanie import WriteRules
 from internals.db import AvatarImage
 from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
-from internals.enums import ApprovalStatus
+from internals.enums import ApprovalStatus, UserType
 from internals.session import encrypt_password, verify_password
+from internals.utils import to_uuid
 
 from .models import MerchantInputGQL, UserGQL
 
@@ -42,6 +43,7 @@ __all__ = (
     "mutate_login_user",
     "mutate_register_user",
     "mutate_apply_new_merchant",
+    "mutate_update_merchant",
 )
 
 logger = logging.getLogger("GraphQL.Mutations")
@@ -90,6 +92,7 @@ async def mutate_apply_new_merchant(
     name = merchant.name if merchant.name is not gql.UNSET else None
     description = merchant.description if merchant.description is not gql.UNSET else None
     address = merchant.address if merchant.address is not gql.UNSET else None
+    # TODO: Implement upload handling
     # avatar = merchant.avatar if merchant.avatar is not gql.UNSET else None
 
     if name is None:
@@ -122,10 +125,57 @@ async def mutate_apply_new_merchant(
 
 async def mutate_update_merchant(
     id: gql.ID,
-    name: str,
-    description: str,
-    address: str,
-    avatar: AvatarImage,
-    approval: Optional[ApprovalStatus] = None,
-):
-    pass
+    user: UserGQL,
+    merchant: MerchantInputGQL,
+    approval: Optional[ApprovalStatus] = gql.UNSET,
+) -> Union[Tuple[Literal[False], str], Tuple[Literal[True], MerchantDB]]:
+    if merchant.is_unset():
+        logger.warning(f"Merchant<{id}>: No changes to update")
+        return False, "No changes to Merchant data"
+    logger.info(f"Trying to find merchant: {id}")
+    merchant_acc = await MerchantDB.find_one(MerchantDB.merchant_id == to_uuid(id))
+    if merchant_acc is None:
+        logger.error(f"Merchant<{id}>: Merchant not found")
+        return False, "Merchant not found"
+    # Check if user is the owner of the merchant or is ADMIN
+    if user.type != UserType.ADMIN and user.merchant_id != merchant_acc.merchant_id:
+        logger.error(f"Merchant<{id}>: User<{user.id}> is not the owner of the merchant")
+        return False, "User is not the owner of the merchant"
+    if user.merchant_id != str(merchant_acc.id):
+        logger.error(f"Merchant<{id}>: User<{user.id}> is not the owner, checking admin status")
+        if user.type != UserType.ADMIN:
+            logger.error(f"Merchant<{id}>: User<{user.id}> is also not an admin, returning error")
+            return False, "User is not the owner of this merchant"
+    mc_name = merchant.name if merchant.name is not gql.UNSET else None
+    mc_description = merchant.description if merchant.description is not gql.UNSET else None
+    mc_address = merchant.address if merchant.address is not gql.UNSET else None
+    mc_phone = merchant.phone if merchant.phone is not gql.UNSET else None
+    mc_email = merchant.email if merchant.email is not gql.UNSET else None
+    mc_website = merchant.website if merchant.website is not gql.UNSET else None
+    # TODO: Implement upload handling
+    # avatar = merchant.avatar if merchant.avatar is not gql.UNSET else None
+
+    approval = approval if approval is not gql.UNSET else None
+
+    if mc_name is not None:
+        merchant_acc.name = mc_name
+    if mc_description is not None:
+        merchant_acc.description = mc_description
+    if mc_address is not None:
+        merchant_acc.address = mc_address
+    if mc_phone is not None:
+        merchant_acc.phone = mc_phone
+    if mc_email is not None:
+        merchant_acc.email = mc_email
+    if mc_website is not None:
+        merchant_acc.website = mc_website
+    if approval is not None and user.type != UserType.ADMIN:
+        logger.error(f"Merchant<{id}>: Only admin can change approval status")
+        return False, "Only admin can change approval status"
+    elif approval is not None and user.type == UserType.ADMIN:
+        merchant_acc.approved = approval
+
+    logger.info(f"Merchant<{id}>: Saving updates...")
+    await merchant_acc.save_changes()
+
+    return True, merchant_acc
