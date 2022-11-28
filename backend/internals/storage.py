@@ -98,6 +98,7 @@ class LocalStorage:
             if not read:
                 return
             await f.write(read)
+        return await self.stat_file(key, key_id, filename, type)
 
     async def stat_file(self, key: str, key_id: str, filename: str, type: str = "images"):
         await self.start()
