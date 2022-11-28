@@ -24,11 +24,11 @@ SOFTWARE.
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
-from io import BytesIO
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Coroutine, Optional, Protocol, Union
 
 import pendulum
 from aiopath import AsyncPath
@@ -49,6 +49,31 @@ class FileObject:
     last_modified: Optional[DateTime] = None
 
 
+class StreamableData(Protocol):
+    """
+    A simple protocol typing for readable data.
+
+    Mainly contains:
+    - `.read()` method
+    - `.seek()` method
+
+    Both can be async or not.
+    """
+
+    def read(self, size: int = -1) -> Union[bytes, Coroutine[Any, Any, bytes]]:
+        ...
+
+    def seek(self, offset: int) -> Union[None, Coroutine[Any, Any, None]]:
+        ...
+
+
+async def _run_in_executor(func, *args, **kwargs):
+    if asyncio.iscoroutinefunction(func):
+        return await func(*args, **kwargs)
+    kwargs_args = [val for val in kwargs.values()]
+    return await asyncio.get_event_loop().run_in_executor(None, func, *args, *kwargs_args)
+
+
 class LocalStorage:
     def __init__(self, root_path: Union[Path, AsyncPath]):
         self.__base: AsyncPath = root_path if isinstance(root_path, AsyncPath) else AsyncPath(root_path)
@@ -63,13 +88,13 @@ class LocalStorage:
     def close(self):
         pass
 
-    async def stream_upload(self, key: str, key_id: str, filename: str, data: BytesIO, type: str = "images"):
+    async def stream_upload(self, key: str, key_id: str, filename: str, data: StreamableData, type: str = "images"):
         await self.start()
         path = self._root / type / key / key_id.replace("-", "") / filename
         await path.parent.mkdir(parents=True, exist_ok=True)
-        data.seek(0)
+        await _run_in_executor(data.seek, 0)
         async with path.open("wb") as f:
-            read = data.read(1024)
+            read = await _run_in_executor(data.read, 1024)
             if not read:
                 return
             await f.write(read)
