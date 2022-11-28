@@ -30,7 +30,7 @@ from typing import Literal
 from fastapi import APIRouter
 from fastapi.responses import Response, StreamingResponse
 
-from internals.storage import get_s3_or_local
+from internals.storage import get_local_storage
 
 __all__ = ("router",)
 router = APIRouter(prefix="/images", tags=["Storages"])
@@ -45,7 +45,7 @@ async def get_image(type: ImageType, id: str, key: str):
 
     logger.info("Getting image %s/%s/%s", type, id, key)
 
-    storages = get_s3_or_local()
+    storages = get_local_storage()
     stat_file = await storages.stat_file(key=type, key_id=id, filename=key)
     if stat_file is None:
         logger.error("Unable to find specified image: %s/%s/%s", type, id, key)

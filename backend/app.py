@@ -37,7 +37,7 @@ from internals.graphql import KidoFoodContext, KidoGraphQLRouter, schema
 from internals.pubsub import get_pubsub
 from internals.responses import ORJSONXResponse, ResponseType
 from internals.session import SessionError, check_session, create_session_handler, get_session_handler
-from internals.storage import create_s3_server, get_s3_or_local
+from internals.storage import get_local_storage
 from internals.tooling import get_env_config, setup_logger
 from internals.utils import get_description, get_version, to_boolean, try_int
 
@@ -88,18 +88,10 @@ async def on_app_startup():
     await kfdb.connect()
     logger.info("Connected to database!")
 
-    S3_HOSTNAME = env_config.get("S3_HOSTNAME")
-    S3_ACCESS_KEY = env_config.get("S3_ACCESS_KEY")
-    S3_SECRET_KEY = env_config.get("S3_SECRET_KEY")
-    S3_BUCKET = env_config.get("S3_BUCKET")
-
-    # S3 all available?
-    if S3_HOSTNAME is not None and S3_ACCESS_KEY is not None and S3_SECRET_KEY is not None and S3_BUCKET is not None:
-        logger.info("S3 storage available, connecting...")
-        await create_s3_server(S3_HOSTNAME, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
-        logger.info("Connected to S3 storage!")
-    else:
-        logger.info("S3 storage not available, using local storage instead.")
+    logger.info("Preparing storages system...")
+    local_stor = get_local_storage()
+    await local_stor.start()
+    logger.info("Storages system ready!")
 
     logger.info("Creating session...")
     SECRET_KEY = env_config.get("SECRET_KEY") or "KIDOFOOD_SECRET_KEY"
@@ -116,9 +108,6 @@ async def on_app_startup():
 @app.on_event("shutdown")
 async def on_app_shutdown():
     logger.info("Shutting down KidoFood backend...")
-    s3_local = get_s3_or_local()
-    logger.info("Closing storage connection...")
-    s3_local.close()
     logger.info("Closed storage connection!")
     pubsub = get_pubsub()
     logger.info("Closing pubsub connection...")
