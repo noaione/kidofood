@@ -156,6 +156,32 @@ type MerchantConnection {
   nodes: [Merchant!]!
 }
 
+"""
+Merchant update or new data information (all fields are optional, except some of them)
+"""
+input MerchantInput {
+  """The name of the merchant"""
+  name: String
+
+  """The description of the merchant"""
+  description: String
+
+  """The address of the merchant"""
+  address: String
+
+  """The avatar of the merchant"""
+  avatar: Upload
+
+  """The phone number of the merchant"""
+  phone: String
+
+  """The email of the merchant"""
+  email: String
+
+  """The website of the merchant"""
+  website: String
+}
+
 """Either `Merchant` if success or `Result` if failure detected"""
 union MerchantResult = Result | Merchant
 
@@ -170,7 +196,10 @@ type Mutation {
   registerUser(email: String!, password: String!, name: String!): UserResult!
 
   """Apply for merchant"""
-  applyMerchant(name: String!, description: String!, address: String!, avatar: Upload): MerchantResult!
+  applyMerchant(merchant: MerchantInput!): MerchantResult!
+
+  """Update merchant information"""
+  updateMerchant(id: ID!, merchant: MerchantInput!): MerchantResult!
 }
 
 """The order status"""
@@ -241,6 +270,11 @@ type Result {
 enum SortDirection {
   ASC
   DESC
+}
+
+type Subscription {
+  """Subscribe to food orders updates"""
+  orderUpdate(id: ID!): FoodOrder!
 }
 
 """An UUID4 formatted string"""
