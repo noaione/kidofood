@@ -24,16 +24,30 @@ SOFTWARE.
 
 from __future__ import annotations
 
+from typing import NewType
 from uuid import UUID as UUIDMod
 
 import strawberry as gql
 
-__all__ = ("UUID",)
+__all__ = (
+    "UUID",
+    "Upload",
+    "UploadType",
+)
 
+
+UploadType = NewType("Upload", bytes)
 UUID = gql.scalar(
     UUIDMod,
     name="UUID",
     description="An UUID4 formatted string",
     serialize=lambda x: str(x),
     parse_value=lambda x: UUIDMod(x),
+)
+
+Upload = gql.scalar(
+    UploadType,
+    name="Upload",
+    description="A file to be uploaded (`bytes` data) [mutation only]",
+    parse_value=lambda x: x,
 )

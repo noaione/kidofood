@@ -28,6 +28,7 @@ from typing import AsyncGenerator, Optional, Union, cast
 from uuid import UUID
 
 import strawberry as gql
+from strawberry.file_uploads import Upload
 from strawberry.types import Info
 
 from internals.db import Merchant as MerchantDB
@@ -60,6 +61,7 @@ from .resolvers import (
     resolve_user_from_db,
 )
 from .scalars import UUID as UUID2
+from .scalars import Upload as UploadGQL
 from .subscriptions import subs_order_update
 
 __all__ = (
@@ -278,4 +280,10 @@ if _has_any_function_or_attr(Mutation):
 if _has_any_function_or_attr(Subscription):
     _schema_params["subscription"] = Subscription
 
-schema = gql.Schema(**_schema_params, scalar_overrides={UUID: UUID2})
+schema = gql.Schema(
+    **_schema_params,
+    scalar_overrides={
+        UUID: UUID2,
+        Upload: UploadGQL,
+    },
+)
