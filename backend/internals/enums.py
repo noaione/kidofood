@@ -49,8 +49,13 @@ class ApprovalStatus(str, Enum):
 
 class UserType(int, Enum):
     CUSTOMER = 0
+    """Customer"""
     MERCHANT = 1
+    """Merchant (not used right now)"""
+    RIDER = 2
+    """Rider or driver"""
     ADMIN = 999
+    """Administrator"""
 
 
 class OrderStatus(int, Enum):

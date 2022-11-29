@@ -144,6 +144,7 @@ class FoodOrder(Document):
     items: list[Link[FoodItem]]
     total: float
     user: Link[User]
+    rider: Optional[Link[User]]
     merchant: Link[Merchant]
     status: OrderStatus = OrderStatus.PENDING
     target_address: str

@@ -38,6 +38,7 @@ from internals.enums import ApprovalStatus, AvatarType, UserType
 from internals.session import encrypt_password, verify_password
 from internals.utils import make_uuid, to_uuid
 
+from .enums import UserTypeGQL
 from .files import handle_image_upload
 from .models import MerchantInputGQL, UserGQL, UserInputGQL
 
@@ -73,13 +74,14 @@ async def mutate_register_user(
     email: str,
     password: str,
     name: str,
+    type: UserTypeGQL = UserTypeGQL.CUSTOMER,
 ):
     user = await UserDB.find_one(UserDB.email == email)
     if user:
         return False, "User with associated email already exists"
 
     hash_paas = await encrypt_password(password)
-    new_user = UserDB(email=email, password=hash_paas, name=name, avatar=AvatarImage())
+    new_user = UserDB(email=email, password=hash_paas, name=name, avatar=AvatarImage(), type=type)
     await new_user.insert()
     return True, new_user
 

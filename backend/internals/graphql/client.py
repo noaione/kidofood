@@ -34,7 +34,7 @@ from internals.db import Merchant as MerchantDB
 from internals.session import UserSession
 
 from .context import KidoFoodContext
-from .enums import ApprovalStatusGQL
+from .enums import ApprovalStatusGQL, UserTypeGQL
 from .models import (
     Connection,
     FoodItemGQL,
@@ -176,11 +176,18 @@ class Mutation:
 
     @gql.mutation(description="Register to KidoFood")
     async def register_user(
-        self, email: str, password: str, name: str, info: Info[KidoFoodContext, None]
+        self,
+        info: Info[KidoFoodContext, None],
+        email: str,
+        password: str,
+        name: str,
+        type: UserTypeGQL = UserTypeGQL.CUSTOMER,
     ) -> UserResult:
         if info.context.user is not None:
             raise Exception("Please logout first before registering as new user")
-        success, user = await mutate_register_user(email, password, name)
+        if type not in (UserTypeGQL.CUSTOMER, UserTypeGQL.RIDER):
+            return Result(success=False, message="User type is not supported")
+        success, user = await mutate_register_user(email, password, name, type)
         if not success and isinstance(user, str):
             return Result(success=False, message=user)
         user_info = cast(UserGQL, user)
