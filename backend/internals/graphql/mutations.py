@@ -25,7 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-from typing import Literal, Optional, Tuple, Union, cast
+from typing import Literal, Optional, Tuple, TypeVar, Union, cast
 from uuid import UUID
 
 import strawberry as gql
@@ -40,7 +40,11 @@ from internals.utils import make_uuid, to_uuid
 
 from .enums import UserTypeGQL
 from .files import handle_image_upload
-from .models import MerchantInputGQL, UserGQL, UserInputGQL
+from .models import (
+    MerchantInputGQL,
+    UserGQL,
+    UserInputGQL,
+)
 
 __all__ = (
     "mutate_login_user",
@@ -51,12 +55,14 @@ __all__ = (
 )
 
 logger = logging.getLogger("GraphQL.Mutations")
+ResultT = TypeVar("ResultT")
+ResultOrT = Union[Tuple[Literal[False], str], Tuple[Literal[True], ResultT]]
 
 
 async def mutate_login_user(
     email: str,
     password: str,
-):
+) -> ResultOrT[UserGQL]:
     user = await UserDB.find_one(UserDB.email == email)
     if not user:
         return False, "User with associated email not found"
@@ -75,7 +81,7 @@ async def mutate_register_user(
     password: str,
     name: str,
     type: UserTypeGQL = UserTypeGQL.CUSTOMER,
-):
+) -> ResultOrT[UserDB]:
     user = await UserDB.find_one(UserDB.email == email)
     if user:
         return False, "User with associated email already exists"
@@ -141,7 +147,7 @@ async def mutate_update_merchant(
     user: UserGQL,
     merchant: MerchantInputGQL,
     approval: Optional[ApprovalStatus] = gql.UNSET,
-) -> Union[Tuple[Literal[False], str], Tuple[Literal[True], MerchantDB]]:
+) -> ResultOrT[MerchantDB]:
     if merchant.is_unset():
         logger.warning(f"Merchant<{id}>: No changes to update")
         return False, "No changes to Merchant data"
@@ -203,7 +209,7 @@ async def mutate_update_merchant(
 async def mutate_update_user(
     id: gql.ID,
     user: UserInputGQL,
-) -> Union[Tuple[Literal[False], str], Tuple[Literal[True], UserGQL]]:
+) -> ResultOrT[UserGQL]:
     if user.is_unset():
         logger.warning(f"User<{id}>: No changes to update")
         return False, "No changes to User data"
