@@ -40,14 +40,17 @@ from .models import (
     Connection,
     FoodItemGQL,
     FoodOrderGQL,
+    FoodOrderItemInputGQL,
     MerchantGQL,
     MerchantInputGQL,
+    PaymentMethodGQL,
     UserGQL,
     UserInputGQL,
 )
 from .mutations import (
     mutate_apply_new_merchant,
     mutate_login_user,
+    mutate_make_new_order,
     mutate_register_user,
     mutate_update_merchant,
     mutate_update_user,
@@ -152,6 +155,9 @@ UserResult = gql.union(
 MerchantResult = gql.union(
     "MerchantResult", (Result, MerchantGQL), description="Either `Merchant` if success or `Result` if failure detected"
 )
+OrderResult = gql.union(
+    "OrderResult", (Result, FoodOrderGQL), description="Either `FoodOrder` if success or `Result` if failure detected"
+)
 
 
 @gql.type
@@ -251,6 +257,25 @@ class Mutation:
         if not is_success and isinstance(update_user, str):
             return Result(success=False, message=update_user)
         return cast(UserGQL, update_user)
+
+    @gql.mutation(description="Make a new food order")
+    async def new_order(
+        self,
+        info: Info[KidoFoodContext, None],
+        items: list[FoodOrderItemInputGQL],
+        payment: PaymentMethodGQL,
+    ) -> OrderResult:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+        user = UserGQL.from_session(info.context.user)
+        if user.type != UserTypeGQL.CUSTOMER:
+            return Result(success=False, message="You are not a customer")
+        if len(items) < 1:
+            return Result(success=False, message="You must order at least 1 item")
+        _, order_or_str = await mutate_make_new_order(user, items, payment)
+        if isinstance(order_or_str, str):
+            return Result(success=False, message=order_or_str)
+        return order_or_str
 
 
 @gql.type

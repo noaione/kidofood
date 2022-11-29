@@ -30,9 +30,13 @@ from uuid import UUID
 
 import strawberry as gql
 from beanie import WriteRules
+from beanie.operators import In as OpIn
 
 from internals.db import AvatarImage
+from internals.db import FoodItem as FoodItemDB
+from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
+from internals.db import PaymentReceipt as PaymentReceiptDB
 from internals.db import User as UserDB
 from internals.enums import ApprovalStatus, AvatarType, UserType
 from internals.session import encrypt_password, verify_password
@@ -41,7 +45,10 @@ from internals.utils import make_uuid, to_uuid
 from .enums import UserTypeGQL
 from .files import handle_image_upload
 from .models import (
+    FoodOrderGQL,
+    FoodOrderItemInputGQL,
     MerchantInputGQL,
+    PaymentMethodGQL,
     UserGQL,
     UserInputGQL,
 )
@@ -52,6 +59,7 @@ __all__ = (
     "mutate_apply_new_merchant",
     "mutate_update_merchant",
     "mutate_update_user",
+    "mutate_make_new_order",
 )
 
 logger = logging.getLogger("GraphQL.Mutations")
@@ -88,7 +96,7 @@ async def mutate_register_user(
 
     hash_paas = await encrypt_password(password)
     new_user = UserDB(email=email, password=hash_paas, name=name, avatar=AvatarImage(), type=type)
-    await new_user.insert()
+    await new_user.save()
     return True, new_user
 
 
@@ -247,3 +255,56 @@ async def mutate_update_user(
     logger.info(f"User<{id}>: Saving updates...")
     await user_acc.save_changes()
     return True, UserGQL.from_db(user_acc)
+
+
+async def mutate_make_new_order(
+    user: UserGQL,
+    items: list[FoodOrderItemInputGQL],
+    payment: PaymentMethodGQL,
+) -> ResultOrT[FoodOrderGQL]:
+    # Let's fetch the items first
+    items_ids: list[UUID] = []
+    for idx, item in enumerate(items):
+        try:
+            items_ids.append(to_uuid(item.id))
+        except ValueError:
+            return False, f"Invalid ID for items[{idx}]: {item.id}"
+    logger.info(f"Fetching user information for: {user.id}")
+    user_info = await UserDB.find_one(UserDB.user_id == user.id)
+    if user_info is None:
+        logger.warning(f"User<{user.id}>: User not found")
+        return False, "User not found"
+    logger.info(f"Trying to find items: {items_ids!r}")
+    items_data = await FoodItemDB.find(OpIn(FoodItemDB.item_id, items_ids)).to_list()
+    merchants = []
+    mapped_keys = []
+    for item in items_data:
+        mapped_keys.append(str(item.item_id))
+        merch_id = str(item.merchant.ref.id)
+        if merch_id not in merchants:
+            merchants.append(merch_id)
+    if len(merchants) > 1:
+        logger.warning(f"User<{user.id}>: Items from multiple merchants")
+        return False, "Items must be from the same merchant!"
+    merchant_info = await items_data[0].merchant.fetch()
+    if not isinstance(merchant_info, MerchantDB):
+        logger.error(f"User<{user.id}>: Merchant not found for the selected item!")
+        return False, "Unable to find the associated merchant for that item, might be deleted?"
+    invalid_ids = []
+    for item in items_ids:
+        if str(item) not in mapped_keys:
+            invalid_ids.append(str(item))
+    if invalid_ids:
+        return False, f"Invalid IDs for items: {invalid_ids!r}"
+    total_amount = sum(item.price for item in items_data)
+    pay_receipt = PaymentReceiptDB(method=payment.method, amount=total_amount, data=payment.data)
+    food_order = FoodOrderDB(
+        items=items_data,
+        user=user_info,
+        rider=None,
+        merchant=merchant_info,
+        target_address=user_info.address,
+        receipt=pay_receipt,
+    )
+    await food_order.save(link_rule=WriteRules.DO_NOTHING)
+    return True, FoodOrderGQL.from_db(food_order)

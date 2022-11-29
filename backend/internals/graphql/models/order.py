@@ -46,6 +46,8 @@ from .user import UserGQL
 __all__ = (
     "FoodOrderGQL",
     "OrderReceiptGQL",
+    "PaymentMethodGQL",
+    "FoodOrderItemInputGQL",
 )
 
 
@@ -111,3 +113,15 @@ class FoodOrderGQL:
             merchant_id=str(data.merchant.ref.id),
             user_id=str(data.user.ref.id),
         )
+
+
+@gql.input(name="PaymentMethod", description="The payment method used to pay")
+class PaymentMethodGQL:
+    method: str = gql.field(description="The payment method used")
+    data: str = gql.field(description="The card/account information used to pay")
+
+
+@gql.input(name="FoodOrderInput", description="Food/Item order input information")
+class FoodOrderItemInputGQL:
+    id: gql.ID = gql.field(description="The ID of the item")
+    quantity: int = gql.field(description="The quantity of the item (default: `1`)", default=1)
