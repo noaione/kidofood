@@ -82,7 +82,7 @@ type FoodOrder {
   receipt: OrderReceipt!
 
   """The list of associated items for the order"""
-  items: [FoodItem!]!
+  items: [FoodOrderItem!]!
 
   """The associated merchant for the order"""
   merchant: Merchant
@@ -109,6 +109,15 @@ input FoodOrderInput {
 
   """The quantity of the item (default: `1`)"""
   quantity: Int! = 1
+}
+
+"""The each item in an order"""
+type FoodOrderItem {
+  """The quantity of the item"""
+  quantity: Int!
+
+  """The item information itself"""
+  data: FoodItem!
 }
 
 """The item type"""
