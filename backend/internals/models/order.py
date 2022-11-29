@@ -32,6 +32,7 @@ from pendulum.datetime import DateTime
 from internals.db import FoodItem as FoodItemDB
 from internals.db import FoodOrder as FoodOrderDB
 from internals.db import Merchant as MerchantDB
+from internals.db import PaymentReceipt as PaymentReceiptDB
 from internals.db import User as UserDB
 from internals.enums import AvatarType, OrderStatus
 
@@ -42,9 +43,28 @@ __all__ = ("FoodOrderResponse",)
 
 
 @dataclass
+class OrderReceiptResponse(PartialID):
+    method: str
+    amount: float
+    data: str
+
+    @classmethod
+    def from_db(
+        cls: Type[OrderReceiptResponse],
+        db: PaymentReceiptDB,
+    ) -> OrderReceiptResponse:
+        return cls(
+            id=str(db.pay_id),
+            method=db.method,
+            amount=db.amount,
+            data=db.data,
+        )
+
+
+@dataclass
 class FoodOrderResponse(PartialID):
     items: list[FoodItemResponse]
-    total: float
+    receipt: OrderReceiptResponse
 
     # user/merchant
     user: PartialIDAvatar
@@ -99,7 +119,7 @@ class FoodOrderResponse(PartialID):
         return cls(
             id=str(db.order_id),
             items=prefetched_items,
-            total=db.total,
+            receipt=OrderReceiptResponse.from_db(db.receipt),
             user=user,
             merchant=merchant,
             target_address=db.target_address,

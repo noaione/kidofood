@@ -25,7 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Type
 from uuid import UUID
 
 import strawberry as gql
@@ -35,6 +35,7 @@ from bson import ObjectId
 from internals.db import FoodItem as FoodItemModel
 from internals.db import FoodOrder as FoodOrderModel
 from internals.db import Merchant as MerchantModel
+from internals.db import PaymentReceipt
 from internals.db import User as UserModel
 
 from ..enums import OrderStatusGQL
@@ -42,17 +43,37 @@ from .items import FoodItemGQL
 from .merchant import MerchantGQL
 from .user import UserGQL
 
-__all__ = ("FoodOrderGQL",)
+__all__ = (
+    "FoodOrderGQL",
+    "OrderReceiptGQL",
+)
+
+
+@gql.type(name="OrderReceipt", description="The payment receipt of an order")
+class OrderReceiptGQL:
+    id: UUID = gql.field(description="The ID of the receipt")
+    method: str = gql.field(description="The payment method used")
+    amount: float = gql.field(description="The amount paid")
+    data: str = gql.field(description="The card/account information used to pay")
+
+    @classmethod
+    def from_db(cls: Type[OrderReceiptGQL], data: PaymentReceipt) -> OrderReceiptGQL:
+        return cls(
+            id=data.pay_id,
+            method=data.method,
+            amount=data.amount,
+            data=data.data,
+        )
 
 
 @gql.type(name="FoodOrder", description="Food/Item order model")
 class FoodOrderGQL:
     id: UUID = gql.field(description="The ID of the order")
-    total: float = gql.field(description="The total price of the order")
     target_address: str = gql.field(description="The target address delivery of the order")
     created_at: datetime = gql.field(description="The creation time of the order")
     updated_at: datetime = gql.field(description="The last update time of the order")
     status: OrderStatusGQL = gql.field(description="The order status")
+    receipt: OrderReceiptGQL = gql.field(description="The payment receipt of this order")
 
     item_ids: gql.Private[list[str]]  # a list of ObjectId(s)
     merchant_id: gql.Private[str]
@@ -78,14 +99,14 @@ class FoodOrderGQL:
         return UserGQL.from_db(user) if user else None
 
     @classmethod
-    def from_db(cls, data: FoodOrderModel) -> FoodOrderGQL:
+    def from_db(cls: Type[FoodOrderGQL], data: FoodOrderModel) -> FoodOrderGQL:
         return cls(
             id=data.order_id,
-            total=data.total,
             target_address=data.target_address,
             created_at=data.created_at,
             updated_at=data.updated_at,
             status=data.status,
+            receipt=OrderReceiptGQL.from_db(data.receipt),
             item_ids=[str(item_id.ref.id) for item_id in data.items],
             merchant_id=str(data.merchant.ref.id),
             user_id=str(data.user.ref.id),

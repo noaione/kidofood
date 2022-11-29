@@ -42,6 +42,7 @@ __all__ = (
     "FoodItem",
     "User",
     "FoodOrder",
+    "PaymentReceipt",
 )
 
 
@@ -108,6 +109,13 @@ class FoodItem(Document):
         self.updated_at = pendulum_utc()
 
 
+class PaymentReceipt(BaseModel):
+    pay_id: UUID = Field(default_factory=uuid4, unique=True)
+    method: str
+    amount: float
+    data: str  # Let's just use normal string for account mail card number, or something for now
+
+
 class User(Document):
     user_id: UUID = Field(default_factory=uuid4, unique=True)
     name: str
@@ -142,12 +150,12 @@ class User(Document):
 class FoodOrder(Document):
     order_id: UUID = Field(default_factory=uuid4, unique=True)
     items: list[Link[FoodItem]]
-    total: float
     user: Link[User]
     rider: Optional[Link[User]]
     merchant: Link[Merchant]
     status: OrderStatus = OrderStatus.PENDING
     target_address: str
+    receipt: PaymentReceipt
 
     created_at: DateTime = Field(default_factory=pendulum_utc)
     updated_at: DateTime = Field(default_factory=pendulum_utc)
