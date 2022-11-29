@@ -25,6 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 from enum import Enum
+from re import escape as escape_re
 from typing import Optional, Union
 
 import strawberry as gql
@@ -76,6 +77,14 @@ def to_cursor(obj_id: Optional[ObjectId]) -> Optional[Cursor]:
     return str(obj_id) if obj_id is not None else None
 
 
+def sanitize_query(query: str) -> str:
+    # We're going to do a regex search, so we might need to escape the query
+    esc_query = escape_re(query)
+    # Remove any leading/trailing whitespace
+    esc_query = esc_query.strip()
+    return esc_query
+
+
 def parse_ids(ids: Optional[Union[gql.ID, list[gql.ID]]]) -> Optional[list[ObjectId]]:
     if ids is None:
         return None
@@ -104,8 +113,8 @@ def query_or_ids(
     if query is None and parsed_ids is None:
         return None
     valid_query = isinstance(query, str) and len(query) > 0
-    if valid_query and parsed_ids is None:
-        return query
+    if valid_query and parsed_ids is None and query is not None:
+        return sanitize_query(query)
     raise ValueError("Query and ids are mutually exclusive")
 
 
