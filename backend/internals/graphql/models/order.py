@@ -23,13 +23,13 @@ SOFTWARE.
 """
 
 from __future__ import annotations
+from dataclasses import dataclass
 
 from datetime import datetime
 from typing import Optional, Type
 from uuid import UUID
 
 import strawberry as gql
-from beanie.operators import In as OpIn
 from bson import ObjectId
 
 from internals.db import FoodItem as FoodItemModel
@@ -51,6 +51,12 @@ __all__ = (
 )
 
 
+@dataclass
+class PrivateItem:
+    item_id: str
+    quantity: int
+
+
 @gql.type(name="OrderReceipt", description="The payment receipt of an order")
 class OrderReceiptGQL:
     id: UUID = gql.field(description="The ID of the receipt")
@@ -68,6 +74,20 @@ class OrderReceiptGQL:
         )
 
 
+@gql.type(name="FoodOrderItem", description="The each item in an order")
+class FoodOrderItemGQL:
+    item_id: gql.Private[str]  # ObjectId(s)
+    quantity: int = gql.field(description="The quantity of the item")
+
+    @gql.field(description="The item information itself")
+    async def data(self) -> FoodItemGQL:
+        # Resolve items
+        item = await FoodItemModel.find_one(FoodItemModel.id == ObjectId(self.item_id))
+        if item is None:
+            raise Exception(f"Unable to find item in database: {self.item_id}")
+        return FoodItemGQL.from_db(item)
+
+
 @gql.type(name="FoodOrder", description="Food/Item order model")
 class FoodOrderGQL:
     id: UUID = gql.field(description="The ID of the order")
@@ -77,16 +97,15 @@ class FoodOrderGQL:
     status: OrderStatusGQL = gql.field(description="The order status")
     receipt: OrderReceiptGQL = gql.field(description="The payment receipt of this order")
 
-    item_ids: gql.Private[list[str]]  # a list of ObjectId(s)
+    items_temp: gql.Private[list[PrivateItem]]  # a list of ObjectId(s)
     merchant_id: gql.Private[str]
     user_id: gql.Private[str]
 
     @gql.field(description="The list of associated items for the order")
-    async def items(self) -> list[FoodItemGQL]:
+    async def items(self) -> list[FoodOrderItemGQL]:
         # Resolve items
-        object_ids = [ObjectId(item_id) for item_id in self.item_ids]
-        items = await FoodItemModel.find(OpIn(FoodItemModel.id, object_ids)).to_list()
-        return [FoodItemGQL.from_db(item) for item in items]
+        order_items = [FoodOrderItemGQL(item_id=it.item_id, quantity=it.quantity) for it in self.items_temp]
+        return order_items
 
     @gql.field(description="The associated merchant for the order")
     async def merchant(self) -> Optional[MerchantGQL]:
@@ -109,7 +128,7 @@ class FoodOrderGQL:
             updated_at=data.updated_at,
             status=data.status,
             receipt=OrderReceiptGQL.from_db(data.receipt),
-            item_ids=[str(item_id.ref.id) for item_id in data.items],
+            items_temp=[PrivateItem(item_id=str(item.data.ref.id), quantity=item.quantity) for item in data.items],
             merchant_id=str(data.merchant.ref.id),
             user_id=str(data.user.ref.id),
         )

@@ -62,8 +62,14 @@ class OrderReceiptResponse(PartialID):
 
 
 @dataclass
+class FoodOrderItemResponse:
+    data: FoodItemResponse
+    quantity: int
+
+
+@dataclass
 class FoodOrderResponse(PartialID):
-    items: list[FoodItemResponse]
+    items: list[FoodOrderItemResponse]
     receipt: OrderReceiptResponse
 
     # user/merchant
@@ -97,13 +103,15 @@ class FoodOrderResponse(PartialID):
         user = db.user if isinstance(db.user, UserDB) else user_info
         if user is None:
             raise ValueError("User info is required, either passing the prefetched DB or passing the user info")
-        prefetched_items: list[FoodItemResponse] = []
+        prefetched_items: list[FoodOrderItemResponse] = []
         for idx, item in enumerate(db.items):
-            if not isinstance(item, FoodItemDB):
+            if not isinstance(item.data, FoodItemDB):
                 raise TypeError(
                     f"items[{idx}] is not a FoodItem, got {type(item)} instead, make sure to prefetch the Link!"
                 )
-            prefetched_items.append(FoodItemResponse.from_db(item, merchant_info))
+            prefetched_items.append(
+                FoodOrderItemResponse(data=FoodItemResponse.from_db(item.data), quantity=item.quantity)
+            )
         if isinstance(merchant, MerchantDB):
             merchant = PartialIDAvatar(
                 str(merchant.merchant_id),

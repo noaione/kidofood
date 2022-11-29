@@ -147,9 +147,14 @@ class User(Document):
         self.updated_at = pendulum_utc()
 
 
+class FoodOrderItem(BaseModel):
+    data: Link[FoodItem]
+    quantity: int = 1
+
+
 class FoodOrder(Document):
     order_id: UUID = Field(default_factory=uuid4, unique=True)
-    items: list[Link[FoodItem]]
+    items: list[FoodOrderItem]
     user: Link[User]
     rider: Optional[Link[User]]
     merchant: Link[Merchant]
