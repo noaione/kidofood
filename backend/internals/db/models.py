@@ -42,6 +42,7 @@ __all__ = (
     "FoodItem",
     "User",
     "FoodOrder",
+    "FoodOrderItem",
     "PaymentReceipt",
 )
 
