@@ -35,6 +35,7 @@ from beanie.operators import In as OpIn
 from internals.db import AvatarImage
 from internals.db import FoodItem as FoodItemDB
 from internals.db import FoodOrder as FoodOrderDB
+from internals.db import FoodOrderItem as FoodOrderItemDB
 from internals.db import Merchant as MerchantDB
 from internals.db import PaymentReceipt as PaymentReceiptDB
 from internals.db import User as UserDB
@@ -264,11 +265,13 @@ async def mutate_make_new_order(
 ) -> ResultOrT[FoodOrderGQL]:
     # Let's fetch the items first
     items_ids: list[UUID] = []
+    items_quant_map: dict[str, int] = {}
     for idx, item in enumerate(items):
         try:
             items_ids.append(to_uuid(item.id))
         except ValueError:
             return False, f"Invalid ID for items[{idx}]: {item.id}"
+        items_quant_map[item.id] = item.quantity
     logger.info(f"Fetching user information for: {user.id}")
     user_info = await UserDB.find_one(UserDB.user_id == user.id)
     if user_info is None:
@@ -278,11 +281,16 @@ async def mutate_make_new_order(
     items_data = await FoodItemDB.find(OpIn(FoodItemDB.item_id, items_ids)).to_list()
     merchants = []
     mapped_keys = []
+    remapped_items: list[FoodOrderItemDB] = []
+    total_amount = 0
     for item in items_data:
         mapped_keys.append(str(item.item_id))
         merch_id = str(item.merchant.ref.id)
+        it_quantity = items_quant_map[str(item.item_id)]
+        remapped_items.append(FoodOrderItemDB(data=item, quantity=it_quantity))  # type: ignore
         if merch_id not in merchants:
             merchants.append(merch_id)
+        total_amount += item.price * it_quantity
     if len(merchants) > 1:
         logger.warning(f"User<{user.id}>: Items from multiple merchants")
         return False, "Items must be from the same merchant!"
@@ -296,10 +304,9 @@ async def mutate_make_new_order(
             invalid_ids.append(str(item))
     if invalid_ids:
         return False, f"Invalid IDs for items: {invalid_ids!r}"
-    total_amount = sum(item.price for item in items_data)
     pay_receipt = PaymentReceiptDB(method=payment.method, amount=total_amount, data=payment.data)
     food_order = FoodOrderDB(
-        items=items_data,
+        items=remapped_items,
         user=user_info,
         rider=None,
         merchant=merchant_info,
