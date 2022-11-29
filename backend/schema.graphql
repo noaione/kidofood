@@ -66,9 +66,6 @@ type FoodOrder {
   """The ID of the order"""
   id: UUID!
 
-  """The total price of the order"""
-  total: Float!
-
   """The target address delivery of the order"""
   targetAddress: String!
 
@@ -80,6 +77,9 @@ type FoodOrder {
 
   """The order status"""
   status: OrderStatus!
+
+  """The payment receipt of this order"""
+  receipt: OrderReceipt!
 
   """The list of associated items for the order"""
   items: [FoodItem!]!
@@ -100,6 +100,15 @@ type FoodOrderConnection {
 
   """List of resolved data"""
   nodes: [FoodOrder!]!
+}
+
+"""Food/Item order input information"""
+input FoodOrderInput {
+  """The ID of the item"""
+  id: ID!
+
+  """The quantity of the item (default: `1`)"""
+  quantity: Int! = 1
 }
 
 """The item type"""
@@ -193,14 +202,40 @@ type Mutation {
   logoutUser: Result!
 
   """Register to KidoFood"""
-  registerUser(email: String!, password: String!, name: String!): UserResult!
+  registerUser(email: String!, password: String!, name: String!, type: UserType! = CUSTOMER): UserResult!
 
   """Apply for merchant"""
   applyMerchant(merchant: MerchantInput!): MerchantResult!
 
   """Update merchant information"""
   updateMerchant(id: ID!, merchant: MerchantInput!): MerchantResult!
+
+  """
+  Update user information, you must be logged in to update your own account
+  """
+  updateUser(user: UserInput!): UserResult!
+
+  """Make a new food order"""
+  newOrder(items: [FoodOrderInput!]!, payment: PaymentMethod!): OrderResult!
 }
+
+"""The payment receipt of an order"""
+type OrderReceipt {
+  """The ID of the receipt"""
+  id: UUID!
+
+  """The payment method used"""
+  method: String!
+
+  """The amount paid"""
+  amount: Float!
+
+  """The card/account information used to pay"""
+  data: String!
+}
+
+"""Either `FoodOrder` if success or `Result` if failure detected"""
+union OrderResult = Result | FoodOrder
 
 """The order status"""
 enum OrderStatus {
@@ -229,6 +264,15 @@ type PageInfo {
 
   """Whether there is a next page or not"""
   hasNextPage: Boolean!
+}
+
+"""The payment method used to pay"""
+input PaymentMethod {
+  """The payment method used"""
+  method: String!
+
+  """The card/account information used to pay"""
+  data: String!
 }
 
 type Query {
@@ -280,6 +324,7 @@ type Subscription {
 """An UUID4 formatted string"""
 scalar UUID
 
+"""A file to be uploaded (`bytes` data) [mutation only]"""
 scalar Upload
 
 """User model"""
@@ -303,6 +348,21 @@ type User {
   merchant: Merchant
 }
 
+"""User update data information (all fields are optional.)"""
+input UserInput {
+  """The client or user real name"""
+  name: String
+
+  """The user avatar"""
+  avatar: Upload
+
+  """The old password"""
+  password: String
+
+  """The new password"""
+  newPassword: String
+}
+
 """Either `User` if success or `Result` if failure detected"""
 union UserResult = Result | User
 
@@ -310,5 +370,6 @@ union UserResult = Result | User
 enum UserType {
   CUSTOMER
   MERCHANT
+  RIDER
   ADMIN
 }
