@@ -24,6 +24,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
+from abc import ABC
 from typing import Optional
 from uuid import UUID
 
@@ -33,10 +34,115 @@ from ..redbridge import RedisBridge
 from .errors import BackendError
 from .models import UserSession
 
-__all__ = ("RedisBackend",)
+__all__ = (
+    "InMemoryBackend",
+    "RedisBackend",
+)
 
 
-class RedisBackend:
+class SessionBackend(ABC):
+    """
+    Session backend interface
+    """
+
+    async def shutdown(self) -> None:
+        """Close the connection to the database."""
+        pass
+
+    async def create(self, session_id: UUID, data: UserSession) -> None:
+        """
+        Create new session data on the backend.
+
+        Parameters
+        ----------
+        session_id : UUID
+            The session ID to be created
+        data : UserSession
+            The user session information
+
+        Raises
+        ------
+        BackendError
+            If the session ID already exist on the backend
+        """
+        raise NotImplementedError
+
+    async def read(self, session_id: UUID) -> Optional[UserSession]:
+        """
+        Read or fetch session data from the backend.
+
+        Parameters
+        ----------
+        session_id : UUID
+            The session ID to be fetched
+
+        Returns
+        -------
+        Optional[UserSession]
+            The session if exist on the backend
+        """
+        raise NotImplementedError
+
+    async def update(self, session_id: UUID, data: UserSession) -> None:
+        """
+        Update session data on the backend.
+
+        Parameters
+        ----------
+        session_id : UUID
+            The session ID to be updated
+        data : UserSession
+            The user session information
+
+        Raises
+        ------
+        BackendError
+            If the session ID does not exist on the backend
+        """
+        raise NotImplementedError
+
+    async def delete(self, session_id: UUID) -> None:
+        """
+        Delete session data from the backend.
+
+        Parameters
+        ----------
+        session_id : UUID
+            The session ID to be deleted
+        """
+        raise NotImplementedError
+
+
+class InMemoryBackend(SessionBackend):
+    """Store session inside a memory dictionary."""
+
+    def __init__(self) -> None:
+        self.__SESSIONS: dict[UUID, UserSession] = {}
+
+    async def shutdown(self) -> None:
+        pass
+
+    async def read(self, session_id: UUID) -> Optional[UserSession]:
+        return self.__SESSIONS.get(session_id)
+
+    async def create(self, session_id: UUID, data: UserSession) -> None:
+        if self.__SESSIONS.get(session_id) is not None:
+            raise BackendError("create can't overwrite an existing session")
+        self.__SESSIONS[session_id] = data
+
+    async def update(self, session_id: UUID, data: UserSession) -> None:
+        if self.__SESSIONS.get(session_id) is None:
+            raise BackendError("session does not exist, cannot update")
+        self.__SESSIONS[session_id] = data
+
+    async def delete(self, session_id: UUID) -> None:
+        try:
+            del self.__SESSIONS[session_id]
+        except KeyError:
+            pass
+
+
+class RedisBackend(SessionBackend):
     """Store session data in a redis database."""
 
     def __init__(

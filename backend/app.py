@@ -98,8 +98,8 @@ async def on_app_startup():
     REDIS_HOST = env_config.get("REDIS_HOST")
     REDIS_PORT = env_config.get("REDIS_PORT")
     REDIS_PASS = env_config.get("REDIS_PASS")
-    if REDIS_HOST is None:
-        raise Exception("No Redis connection information provided!")
+    if SECRET_KEY == "KIDOFOOD_SECRET_KEY":
+        logger.warning("Using default secret key, please change it later since it's not secure!")
     SESSION_MAX_AGE = int(env_config.get("SESSION_MAX_AGE") or 7 * 24 * 60 * 60)
     create_session_handler(SECRET_KEY, REDIS_HOST, try_int(REDIS_PORT) or 6379, REDIS_PASS, SESSION_MAX_AGE)
     logger.info("Session created!")

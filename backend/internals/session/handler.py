@@ -34,7 +34,7 @@ from fastapi.openapi.models import APIKey, APIKeyIn
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
 
-from .backend import RedisBackend
+from .backend import InMemoryBackend, RedisBackend, SessionBackend
 from .errors import SessionError
 from .models import UserSession
 
@@ -72,7 +72,7 @@ class SessionHandler:
         secret_key: str,
         params: CookieParameters,
         scheme_name: Optional[str] = None,
-        backend: RedisBackend,
+        backend: SessionBackend,
     ):
         self.model: APIKey = APIKey(
             **{"in": APIKeyIn.cookie},  # type: ignore
@@ -149,12 +149,17 @@ _GLOBAL_SESSION_HANDLER: Optional[SessionHandler] = None
 
 def create_session_handler(
     secret_key: str,
-    redis_host: str,
+    redis_host: Optional[str] = None,
     redis_port: int = 6379,
     redis_password: Optional[str] = None,
     max_age=7 * 24 * 60 * 60,
 ):
     global _GLOBAL_SESSION_HANDLER
+
+    backend = InMemoryBackend()
+    redis_host = redis_host.strip() if isinstance(redis_host, str) else redis_host
+    if redis_host:
+        backend = RedisBackend(redis_host, redis_port, redis_password)
 
     if _GLOBAL_SESSION_HANDLER is None:
         secure = os.getenv("NODE_ENV") == "production"
@@ -164,7 +169,7 @@ def create_session_handler(
             identifier="kidofood|ident",
             secret_key=secret_key,
             params=cookie_params,
-            backend=RedisBackend(redis_host, redis_port, redis_password),
+            backend=backend,
         )
 
 
