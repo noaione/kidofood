@@ -118,7 +118,7 @@ class UserGQL:
         )
 
 
-@gql.type(name="UserInput", description="User update data information (all fields are optional.)")
+@gql.input(name="UserInput", description="User update data information (all fields are optional.)")
 class UserInputGQL:
     name: Optional[str] = gql.field(description="The client or user real name", default=gql.UNSET)
     avatar: Optional[Upload] = gql.field(description="The user avatar", default=gql.UNSET)
