@@ -30,6 +30,7 @@ from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket
 from fastapi.datastructures import Default
 from fastapi.responses import RedirectResponse
 from strawberry.printer import print_schema
+from internals.claim import get_claim_status
 
 from internals.db import KFDatabase
 from internals.discover import discover_routes
@@ -88,6 +89,11 @@ async def on_app_startup():
     await kfdb.connect()
     logger.info("Connected to database!")
 
+    claim_stat = get_claim_status()
+    logger.info("Checking claim status...")
+    await claim_stat.set_from_db()
+    logger.info("Claim status checked!")
+
     logger.info("Preparing storages system...")
     local_stor = get_local_storage()
     await local_stor.start()
@@ -143,6 +149,9 @@ async def gql_user_context(request: Request = None, websocket: WebSocket = None)
 async def get_context(
     custom_context=Depends(gql_user_context),
 ):
+    claim_stat = get_claim_status()
+    if not claim_stat.is_claimed:
+        raise Exception("This server is not claimed yet!")
     return custom_context
 
 
