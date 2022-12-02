@@ -39,6 +39,7 @@ from .enums import ApprovalStatusGQL, OrderStatusGQL, UserTypeGQL
 from .models import (
     Connection,
     FoodItemGQL,
+    FoodItemInputGQL,
     FoodOrderGQL,
     FoodOrderItemInputGQL,
     MerchantGQL,
@@ -51,6 +52,7 @@ from .mutations import (
     mutate_apply_new_merchant,
     mutate_login_user,
     mutate_make_new_order,
+    mutate_new_food_item,
     mutate_register_user,
     mutate_update_merchant,
     mutate_update_order_status,
@@ -150,14 +152,17 @@ class Query:
     search: QuerySearch = gql.field(description="Search for items on specific fields")
 
 
-UserResult = gql.union(
-    "UserResult", (Result, UserGQL), description="Either `User` if success or `Result` if failure detected"
+ItemResult = gql.union(
+    "ItemResult", (Result, FoodItemGQL), description="Either `FoodItem` if success or `Result` if failure detected"
 )
 MerchantResult = gql.union(
     "MerchantResult", (Result, MerchantGQL), description="Either `Merchant` if success or `Result` if failure detected"
 )
 OrderResult = gql.union(
     "OrderResult", (Result, FoodOrderGQL), description="Either `FoodOrder` if success or `Result` if failure detected"
+)
+UserResult = gql.union(
+    "UserResult", (Result, UserGQL), description="Either `User` if success or `Result` if failure detected"
 )
 
 
@@ -291,6 +296,20 @@ class Mutation:
         if isinstance(order_or_str, str):
             return Result(success=False, message=order_or_str)
         return order_or_str
+
+    @gql.mutation(description="Create new food item")
+    async def create_item(
+        self,
+        info: Info[KidoFoodContext, None],
+        item: FoodItemInputGQL,
+    ) -> ItemResult:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+        user = UserGQL.from_session(info.context.user)
+        _, item_or_str = await mutate_new_food_item(user, item)
+        if isinstance(item_or_str, str):
+            return Result(success=False, message=item_or_str)
+        return item_or_str
 
 
 @gql.type

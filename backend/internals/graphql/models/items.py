@@ -36,10 +36,14 @@ from internals.db import Merchant as MerchantModel
 from internals.enums import AvatarType
 
 from ..enums import ItemTypeGQL
+from ..scalars import Upload
 from .common import AvatarImageGQL
 from .merchant import MerchantGQL
 
-__all__ = ("FoodItemGQL",)
+__all__ = (
+    "FoodItemGQL",
+    "FoodItemInputGQL",
+)
 
 
 @gql.type(name="FoodItem", description="Food/Item model")
@@ -73,7 +77,10 @@ class FoodItemGQL:
             avatar = AvatarImageGQL.from_db(data.avatar, AvatarType.ITEMS)
         merchant_id = None  # type: Optional[str]
         if data.merchant is not None:
-            merchant_id = str(data.merchant.ref.id)
+            if isinstance(data.merchant, MerchantModel):
+                merchant_id = str(data.merchant.id)
+            else:
+                merchant_id = str(data.merchant.ref.id)
         return cls(
             id=data.item_id,
             name=data.name,
@@ -86,3 +93,13 @@ class FoodItemGQL:
             image=avatar,
             merchant_id=merchant_id,
         )
+
+
+@gql.input(name="FoodItemInput", description="Food/Item input model")
+class FoodItemInputGQL:
+    name: str = gql.field(description="The name of the item")
+    description: Optional[str] = gql.field(description="The description of the item", default=gql.UNSET)
+    price: float = gql.field(description="The price of the item")
+    stock: int = gql.field(description="The current stock of the item")
+    type: ItemTypeGQL = gql.field(description="The item type")
+    image: Optional[Upload] = gql.field(description="The image of the item", default=gql.UNSET)

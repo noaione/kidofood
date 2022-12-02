@@ -31,6 +31,7 @@ from uuid import UUID
 import strawberry as gql
 from beanie import WriteRules
 from beanie.operators import In as OpIn
+from bson import ObjectId
 
 from internals.db import AvatarImage
 from internals.db import FoodItem as FoodItemDB
@@ -43,9 +44,11 @@ from internals.enums import ApprovalStatus, AvatarType, UserType
 from internals.session import encrypt_password, verify_password
 from internals.utils import make_uuid, to_uuid
 
-from .enums import OrderStatusGQL, UserTypeGQL
+from .enums import ApprovalStatusGQL, OrderStatusGQL, UserTypeGQL
 from .files import handle_image_upload
 from .models import (
+    FoodItemGQL,
+    FoodItemInputGQL,
     FoodOrderGQL,
     FoodOrderItemInputGQL,
     MerchantInputGQL,
@@ -62,6 +65,7 @@ __all__ = (
     "mutate_update_user",
     "mutate_make_new_order",
     "mutate_update_order_status",
+    "mutate_new_food_item",
 )
 
 logger = logging.getLogger("GraphQL.Mutations")
@@ -360,3 +364,40 @@ async def mutate_update_order_status(
     order.status = status
     await order.save_changes()
     return True, FoodOrderGQL.from_db(order)
+
+
+async def mutate_new_food_item(
+    user: UserGQL,
+    item: FoodItemInputGQL,
+) -> ResultOrT[FoodItemGQL]:
+    if user.merchant_id is None:
+        return False, "You are not a merchant!"
+
+    merchant = await MerchantDB.find_one(MerchantDB.id == ObjectId(user.merchant_id))
+    if merchant is None:
+        return False, "Your merchant acccout cannot be found!"
+    if merchant.approved != ApprovalStatusGQL.APPROVED:
+        return False, "Your merchant account is not approved yet!"
+
+    description = item.description if item.description is not gql.UNSET else None
+    image = item.image if item.image is not gql.UNSET else None
+
+    img_info = AvatarImage(key="", format="")
+    if image is not None:
+        avatar_upload = await handle_image_upload(image, str(merchant.id), AvatarType.ITEMS)
+        img_info = AvatarImage(
+            key=avatar_upload.filename,
+            format=avatar_upload.extension.lstrip("."),
+        )
+
+    food_item = FoodItemDB(
+        name=item.name,
+        description=description or "",
+        stock=item.stock,
+        price=item.price,
+        type=item.type,
+        merchant=merchant,
+        image=img_info,
+    )
+    await food_item.save(link_rule=WriteRules.DO_NOTHING)
+    return True, FoodItemGQL.from_db(food_item)
