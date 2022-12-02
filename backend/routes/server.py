@@ -24,15 +24,23 @@ SOFTWARE.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
+import platform
+import time
 from dataclasses import dataclass
+from typing import TypedDict
 
+import psutil
 from fastapi import APIRouter
+from fastapi import __version__ as fastapi_version
 
 from internals.db import User
 from internals.enums import UserType
 from internals.responses import ResponseType
 from internals.session import PartialUserSession, encrypt_password
+from internals.version import __version__ as kf_version
 
 __all__ = ("router",)
 router = APIRouter(prefix="/server", tags=["Server"])
@@ -91,3 +99,54 @@ async def claim_server_post(user: PartialRegister):
     logger.info(f"User {user.email} created, responding...")
 
     return ResponseType[PartialUserSession](data=user_sess).to_orjson()
+
+
+class _MemoryStatsResult(TypedDict):
+    real: float
+    virtual: float
+
+
+class StatsResult(TypedDict):
+    os: str
+    """The OS host"""
+    python: str
+    """The Python version used"""
+    fastapi: str
+    """The fastapi version"""
+    version: str
+    """The current app version"""
+    memory: _MemoryStatsResult
+    """Memory stats in MiB"""
+    uptime: float
+    """The uptime in seconds"""
+
+
+@router.get("/status", summary="Check server health and status", response_model=ResponseType[StatsResult])
+async def server_status():
+    """
+    Check server health and status.
+    """
+    loop = asyncio.get_event_loop()
+
+    # Get used CPU and memory by the server
+    process = await loop.run_in_executor(None, psutil.Process, os.getpid())
+    mem_info = await loop.run_in_executor(None, process.memory_info)
+    rss_mem = round(mem_info.rss / 1024**2, 2)
+    vms_mem = round(mem_info.vms / 1024**2, 2)
+    create_time = await loop.run_in_executor(None, process.create_time)
+
+    delta_uptime = time.time() - create_time
+
+    os_system = f"{platform.system()} {platform.release()}"
+    py_ver = platform.python_version()
+
+    data_res: StatsResult = {
+        "os": os_system,
+        "python": py_ver,
+        "fastapi": fastapi_version,
+        "version": kf_version,
+        "memory": {"real": rss_mem, "virtual": vms_mem},
+        "uptime": delta_uptime,
+    }
+
+    return ResponseType[StatsResult](data=data_res).to_orjson()
