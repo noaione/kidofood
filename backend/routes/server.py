@@ -25,18 +25,28 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 
 from fastapi import APIRouter
 
 from internals.db import User
 from internals.enums import UserType
-from internals.models import PartialRegister
 from internals.responses import ResponseType
 from internals.session import PartialUserSession, encrypt_password
 
 __all__ = ("router",)
 router = APIRouter(prefix="/server", tags=["Server"])
 logger = logging.getLogger("Routes.Server")
+
+
+@dataclass
+class PartialRegister:
+    """A partial register object that is used to store the register information
+    before the user is registered.
+    """
+
+    email: str
+    password: str
 
 
 @router.get("/claim", summary="Check server claim status", response_model=ResponseType[PartialUserSession])
@@ -71,7 +81,7 @@ async def claim_server_post(user: PartialRegister):
     logger.info(f"Claiming with {user.email}...")
     hash_pass = await encrypt_password(user.password)
     user_new = User(
-        name=user.name,
+        name="Admin",
         email=user.email,
         password=hash_pass,
         type=UserType.ADMIN,

@@ -8,7 +8,4 @@ The routes module contains all the routes for the backend.
 """
 
 from .images import *
-from .merchant import *
-from .search import *
 from .server import *
-from .user import *
