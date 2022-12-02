@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, FastAPI, Request
+from fastapi import APIRouter, Depends, FastAPI, Request, WebSocket
 from fastapi.datastructures import Default
 from fastapi.responses import RedirectResponse
 from strawberry.printer import print_schema
@@ -131,10 +131,10 @@ async def session_exception_handler(_: Request, exc: SessionError):
     return ResponseType(error=exc.detail, code=status_code).to_orjson(status_code)
 
 
-async def gql_user_context(request: Request):
+async def gql_user_context(request: Request = None, websocket: WebSocket = None):  # type: ignore
     session = get_session_handler()
     try:
-        user = await check_session(request)
+        user = await check_session(request or websocket)
         return KidoFoodContext(session=session, user=user)
     except Exception:
         return KidoFoodContext(session=session)

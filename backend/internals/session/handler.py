@@ -29,7 +29,7 @@ from enum import Enum
 from typing import Optional, Union
 from uuid import UUID
 
-from fastapi import Request, Response
+from fastapi import Request, Response, WebSocket
 from fastapi.openapi.models import APIKey, APIKeyIn
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from pydantic import BaseModel
@@ -128,7 +128,7 @@ class SessionHandler:
     def identifier(self) -> str:
         return self._identifier
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Union[Request, WebSocket]):
         signed_session = request.cookies.get(self.model.name)
         if not signed_session:
             raise SessionError(detail="No session found", status_code=403)
@@ -182,6 +182,6 @@ def get_session_handler() -> SessionHandler:
     return _GLOBAL_SESSION_HANDLER
 
 
-async def check_session(request: Request):
+async def check_session(request: Union[Request, WebSocket]) -> UserSession:
     session_handler = get_session_handler()
     return await session_handler(request)
