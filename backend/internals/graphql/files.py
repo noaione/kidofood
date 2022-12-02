@@ -30,10 +30,11 @@ from mimetypes import guess_extension
 
 import magic
 from fastapi import UploadFile
-from strawberry.file_uploads import Upload
 
 from internals.storage import get_local_storage
 from internals.utils import make_uuid
+
+from .scalars import Upload
 
 __all__ = (
     "InvalidMimeType",

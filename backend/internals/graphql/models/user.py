@@ -29,7 +29,6 @@ from uuid import UUID
 
 import strawberry as gql
 from bson import ObjectId
-from strawberry.file_uploads import Upload
 
 from internals.db import Merchant as MerchantDB
 from internals.db import User as UserDB
@@ -38,6 +37,7 @@ from internals.session.models import UserSession
 from internals.utils import make_uuid, to_uuid
 
 from ..enums import UserTypeGQL
+from ..scalars import Upload
 from .common import AvatarImageGQL
 from .merchant import MerchantGQL
 

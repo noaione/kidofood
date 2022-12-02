@@ -43,7 +43,7 @@ from internals.enums import ApprovalStatus, AvatarType, UserType
 from internals.session import encrypt_password, verify_password
 from internals.utils import make_uuid, to_uuid
 
-from .enums import UserTypeGQL
+from .enums import OrderStatusGQL, UserTypeGQL
 from .files import handle_image_upload
 from .models import (
     FoodOrderGQL,
@@ -61,6 +61,7 @@ __all__ = (
     "mutate_update_merchant",
     "mutate_update_user",
     "mutate_make_new_order",
+    "mutate_update_order_status",
 )
 
 logger = logging.getLogger("GraphQL.Mutations")
@@ -315,3 +316,47 @@ async def mutate_make_new_order(
     )
     await food_order.save(link_rule=WriteRules.DO_NOTHING)
     return True, FoodOrderGQL.from_db(food_order)
+
+
+async def mutate_update_order_status(
+    id: gql.ID,
+    status: OrderStatusGQL,
+) -> ResultOrT[FoodOrderGQL]:
+    logger.info(f"Trying to find order: {id}")
+    order = await FoodOrderDB.find_one(FoodOrderDB.order_id == to_uuid(id))
+    if order is None:
+        logger.warning(f"Order<{id}>: Order not found")
+        return False, "Order not found"
+    logger.info(f"Order<{id}>: Updating status to {status}")
+    # Check if status update doable.
+    _CANCEL = (
+        OrderStatusGQL.PROCESSING,
+        OrderStatusGQL.DELIVERING,
+        OrderStatusGQL.REJECTED,
+        OrderStatusGQL.CANCELLED,
+        OrderStatusGQL.CANCELED_MERCHANT,
+        OrderStatusGQL.PROBLEM_FAIL_TO_DELIVER,
+        OrderStatusGQL.DONE,
+    )
+    _UNCHANGEABLE = (
+        OrderStatusGQL.REJECTED,
+        OrderStatusGQL.CANCELLED,
+        OrderStatusGQL.CANCELED_MERCHANT,
+        OrderStatusGQL.DONE,
+        OrderStatusGQL.PROBLEM_FAIL_TO_DELIVER,
+        OrderStatusGQL.PROBLEM_MERCHANT,
+    )
+    if order.status in _UNCHANGEABLE:
+        logger.warning(f"Order<{id}>: Status is unchangeable")
+        return False, "Status is unchangeable for this order"
+    if status in (OrderStatusGQL.CANCELED_MERCHANT, OrderStatusGQL.CANCELLED):
+        if order.status in _CANCEL:
+            logger.warning(f"Order<{id}>: Invalid status update")
+            return False, "Unable to cancel order anymore!"
+    if status == order.status:
+        logger.warning(f"Order<{id}>: Status is already {status}")
+        return False, "Status is already set to that value"
+
+    order.status = status
+    await order.save_changes()
+    return True, FoodOrderGQL.from_db(order)

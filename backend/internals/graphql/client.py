@@ -35,7 +35,7 @@ from internals.db import Merchant as MerchantDB
 from internals.session import UserSession
 
 from .context import KidoFoodContext
-from .enums import ApprovalStatusGQL, UserTypeGQL
+from .enums import ApprovalStatusGQL, OrderStatusGQL, UserTypeGQL
 from .models import (
     Connection,
     FoodItemGQL,
@@ -53,6 +53,7 @@ from .mutations import (
     mutate_make_new_order,
     mutate_register_user,
     mutate_update_merchant,
+    mutate_update_order_status,
     mutate_update_user,
 )
 from .resolvers import (
@@ -273,6 +274,20 @@ class Mutation:
         if len(items) < 1:
             return Result(success=False, message="You must order at least 1 item")
         _, order_or_str = await mutate_make_new_order(user, items, payment)
+        if isinstance(order_or_str, str):
+            return Result(success=False, message=order_or_str)
+        return order_or_str
+
+    @gql.mutation(description="Update food order")
+    async def update_order(
+        self,
+        info: Info[KidoFoodContext, None],
+        id: gql.ID,
+        status: OrderStatusGQL,
+    ) -> OrderResult:
+        if info.context.user is None:
+            raise Exception("You are not logged in")
+        _, order_or_str = await mutate_update_order_status(id, status)
         if isinstance(order_or_str, str):
             return Result(success=False, message=order_or_str)
         return order_or_str

@@ -29,12 +29,12 @@ from typing import Optional, Type
 from uuid import UUID
 
 import strawberry as gql
-from strawberry.file_uploads import Upload
 
 from internals.db import Merchant as MerchantModel
 from internals.enums import AvatarType
 
 from ..enums import ApprovalStatusGQL
+from ..scalars import Upload
 from .common import AvatarImageGQL
 
 __all__ = (
