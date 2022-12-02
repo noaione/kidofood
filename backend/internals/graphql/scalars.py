@@ -25,7 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 from typing import NewType
-from uuid import UUID as UUIDMod
+from uuid import UUID as UUIDMod  # noqa: N811
 
 import strawberry as gql
 

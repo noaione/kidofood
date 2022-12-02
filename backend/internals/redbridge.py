@@ -37,7 +37,7 @@ from redis import asyncio as aioredis
 __all__ = ("RedisBridge",)
 
 
-def ObjectIdEncoder(obj: Any):
+def ObjectIdEncoder(obj: Any):  # noqa: N802
     if isinstance(obj, ObjectId):
         return str(obj)
     raise TypeError(repr(obj) + " is not JSON serializable")

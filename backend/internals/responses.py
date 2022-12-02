@@ -45,7 +45,7 @@ __all__ = (
 )
 
 
-def ORJsonEncoder(obj: Any):
+def ORJsonEncoder(obj: Any):  # noqa: N802
     if isinstance(obj, DateTime):
         return obj.for_json()
     if isinstance(obj, Time):

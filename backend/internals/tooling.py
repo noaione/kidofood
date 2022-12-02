@@ -58,7 +58,7 @@ class RollingFileHandler(RotatingFileHandler):
         self,
         filename: os.PathLike,
         mode: str = "a",
-        maxBytes: int = 0,
+        maxBytes: int = 0,  # noqa
         backupCount: int = 0,
         encoding: Optional[str] = None,
         delay: bool = False,
@@ -79,7 +79,7 @@ class RollingFileHandler(RotatingFileHandler):
             if last_digit.isdigit():
                 self._last_backup_count = int(last_digit)
 
-    def doRollover(self) -> None:
+    def doRollover(self) -> None:  # noqa: N802
         if self.stream and not self.stream.closed:
             self.stream.close()
         self._last_backup_count += 1

@@ -24,7 +24,7 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Optional
 from uuid import UUID
 
@@ -45,10 +45,12 @@ class SessionBackend(ABC):
     Session backend interface
     """
 
+    @abstractmethod
     async def shutdown(self) -> None:
         """Close the connection to the database."""
         pass
 
+    @abstractmethod
     async def create(self, session_id: UUID, data: UserSession) -> None:
         """
         Create new session data on the backend.
@@ -67,6 +69,7 @@ class SessionBackend(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def read(self, session_id: UUID) -> Optional[UserSession]:
         """
         Read or fetch session data from the backend.
@@ -83,6 +86,7 @@ class SessionBackend(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def update(self, session_id: UUID, data: UserSession) -> None:
         """
         Update session data on the backend.
@@ -101,6 +105,7 @@ class SessionBackend(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def delete(self, session_id: UUID) -> None:
         """
         Delete session data from the backend.
